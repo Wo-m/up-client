@@ -23,6 +23,9 @@ target_link_libraries(${LIBRARY_NAME} PUBLIC cpr::cpr)
 # Json
 find_package(nlohmann_json CONFIG REQUIRED)
 target_link_libraries(${LIBRARY_NAME} PUBLIC nlohmann_json::nlohmann_json)
+# Toml
+find_package(toml11 CONFIG REQUIRED)
+target_link_libraries(${LIBRARY_NAME} PRIVATE toml11::toml11)
 
 
 # EXECUTABLE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

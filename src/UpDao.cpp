@@ -6,13 +6,16 @@
 #include <iostream>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
+#include <toml.hpp>
 
 using namespace std;
 using namespace cpr;
 using namespace nlohmann;
 
 UpDao::UpDao() {
-// Nothing
+    auto config = toml::parse("/Users/dominicthompson/Documents/git/up-client/src/config.toml");
+    API_KEY = toml::find<string>(config, "key");
+    BEARER = Bearer{API_KEY};
 }
 
 /**
@@ -23,13 +26,8 @@ UpDao::UpDao() {
  * @return
  */
 vector<Transaction> UpDao::getTransactions(const string &accountId, const string& since, const string& until) {
-    Parameters parameters = Parameters{{"page[size]", "100"}, {"filter[since]", since}, {"filter[until]", until}};
-
-    Response r = this->get("accounts/" + accountId + "/transactions",
-                           parameters);
-    cout << "Up HTTP Response: " << r.status_code << endl;
-
-    basic_json transactionsData = json::parse(r.text);
+    Parameters parameters = Parameters{PAGE_SIZE, {"filter[since]", since}, {"filter[until]", until}};
+    basic_json transactionsData = this->get("accounts/" + accountId + "/transactions",parameters);
 
     vector<Transaction> transactions = std::vector<Transaction>();
 
@@ -53,36 +51,29 @@ vector<Transaction> UpDao::getTransactions(const string &accountId, const string
  * @return
  */
 Account UpDao::getTransactionalAccount() {
+    basic_json accountsData = this->get("accounts", Parameters{{"filter[accountType]", "TRANSACTIONAL"}});
 
-    // Process Get Request
-    Response r = this->get("accounts", Parameters{{"filter[accountType]", "TRANSACTIONAL"}});
-    cout << "Up HTTP Response: " << r.status_code << endl;
-
-    // Convert Response to JSON
-    basic_json accountsData = json::parse(r.text);
-
-    // Only 1 transactional Account
     basic_json accountData = accountsData["data"][0];
 
-    return {accountData["id"],
-            accountData["attributes"]["displayName"],
-            stof((string) accountData["attributes"]["balance"]["value"])};
+    Account account =
+    {
+        accountData["id"],
+        accountData["attributes"]["displayName"],
+        stof((string) accountData["attributes"]["balance"]["value"])
+    };
+
+    return account;
 }
 
 // private
-Response UpDao::get(const string& path) {
-    return Get(Url{upApi + path},
-               Bearer{this->key});
+json UpDao::get(const string& path, const Parameters& params) {
+    Response r = Get(Url{UP_API + path}, BEARER, params);
+    cout << r.status_code << " for GET from " << path << endl;
+    return json::parse(r.text);
 }
 
-Response UpDao::get(const string& path, const Parameters& params) {
-    return Get(Url{upApi + path},
-               Bearer{this->key},
-               params);
-}
-
-Response UpDao::post(const string& path, const string& body) {
-    return Post(Url{upApi + path},
-                Bearer{this->key},
-                Body{body});
+json UpDao::post(const string& path, const string& body) {
+    Response r =  Post(Url{UP_API + path}, BEARER, Body{body});
+    cout << r.status_code << " for POST to " << path << endl;
+    return json::parse(r.text);
 }
