@@ -19,8 +19,6 @@ private:
     nlohmann::json get(const std::string& path, const cpr::Parameters& params);
     nlohmann::json post(const std::string& path, const std::string& body);
 
-    // TODO move this API_KEY to a config file and dont commit it
-    std::string API_KEY;
     cpr::Bearer BEARER = {""};
 
     // CONSTANTS

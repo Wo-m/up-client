@@ -14,8 +14,7 @@ using namespace cpr;
 using namespace nlohmann;
 
 UpDao::UpDao() {
-    API_KEY = Config::up_api_key;
-    BEARER = Bearer{API_KEY};
+    BEARER = Bearer{Config::up_api_key};
 }
 
 /**
@@ -31,16 +30,27 @@ vector<Transaction> UpDao::getTransactions(const string &accountId, const string
 
     vector<Transaction> transactions = std::vector<Transaction>();
 
-    for (auto& transaction : transactionsData["data"]) {
-        transactions.push_back(
-                {
-                    transaction["id"],
-                    transaction["attributes"]["description"],
-                    transaction["relationships"]["category"]["data"]["id"] == nullptr ? "null" : transaction["relationships"]["category"]["data"]["id"],
-                    stof((string) transaction["attributes"]["amount"]["value"]),
-                    transaction["attributes"]["createdAt"],
-                    transaction["attributes"]["settledAt"] == nullptr ? "null" : transaction["attributes"]["settledAt"]
-                });
+    // FIXME while (true) is a bit mid
+    while (true) {
+        // TODO move transaction mapping to class/method (could put in transaction.h)
+        for (auto &transaction: transactionsData["data"]) {
+            transactions.push_back(
+                    {
+                            transaction["id"],
+                            transaction["attributes"]["description"],
+                            transaction["relationships"]["category"]["data"]["id"] == nullptr ? "null"
+                                                                                              : transaction["relationships"]["category"]["data"]["id"],
+                            stof((string) transaction["attributes"]["amount"]["value"]),
+                            transaction["attributes"]["createdAt"],
+                            transaction["attributes"]["settledAt"] == nullptr ? "null"
+                                                                              : transaction["attributes"]["settledAt"]
+                    });
+        };
+
+        // No more pages
+        if (transactionsData["links"]["next"] == nullptr) break;
+
+        transactionsData = get(((string) transactionsData["links"]["next"]).erase(0, UP_API.size()), {});
     };
 
     return transactions;
