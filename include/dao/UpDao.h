@@ -8,6 +8,7 @@
 #include <vector>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
+#include "config/Config.h"
 
 class UpDao {
 public:
@@ -17,13 +18,17 @@ public:
 
 private:
     nlohmann::json get(const std::string& path, const cpr::Parameters& params);
+    nlohmann::json getNext(const std::string& path);
     nlohmann::json post(const std::string& path, const std::string& body);
-    static std::vector<Transaction> addTransactions(const nlohmann::json& transactionsData, std::vector<Transaction>& transactions);
 
-    cpr::Bearer BEARER = {""};
+    // Static Helper Methods
+    static cpr::Parameter since(const std::string& date);
+    static cpr::Parameter until(const std::string& date);
+    static std::vector<Transaction> addTransactions(const nlohmann::json& transactionsData, std::vector<Transaction>& transactions);
 
     // CONSTANTS
     std::string UP_API = "https://api.up.com.au/api/v1/";
+    cpr::Bearer BEARER = {Config::up_api_key};
     cpr::Parameter PAGE_SIZE = cpr::Parameter{"page[size]", "100"};
 };
 

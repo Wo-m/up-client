@@ -14,7 +14,6 @@ using namespace cpr;
 using namespace nlohmann;
 
 UpDao::UpDao() {
-    BEARER = Bearer{Config::up_api_key};
 }
 
 /**
@@ -24,10 +23,9 @@ UpDao::UpDao() {
  * @param until
  * @return
  */
-vector<Transaction> UpDao::getTransactions(const string &accountId, const string& since, const string& until) {
-    Parameters parameters = Parameters{PAGE_SIZE, {"filter[since]", since}, {"filter[until]", until}};
+vector<Transaction> UpDao::getTransactions(const string &accountId, const string& since_, const string& until_) {
+    Parameters parameters = Parameters{PAGE_SIZE, since(since_), until(until_)};
     basic_json transactionsData = this->get("accounts/" + accountId + "/transactions",parameters);
-
     vector<Transaction> transactions = std::vector<Transaction>();
 
     for(;;) {
@@ -36,7 +34,8 @@ vector<Transaction> UpDao::getTransactions(const string &accountId, const string
         // No more pages
         if (transactionsData["links"]["next"] == nullptr) break;
 
-        transactionsData = get(((string) transactionsData["links"]["next"]).erase(0, UP_API.size()), {});
+        // Next Page
+        transactionsData = getNext(((string) transactionsData["links"]["next"]));
     };
 
     return transactions;
@@ -68,12 +67,25 @@ json UpDao::get(const string& path, const Parameters& params) {
     return json::parse(r.text);
 }
 
+json UpDao::getNext(const string& path) {
+    Response r = Get(Url{path}, BEARER);
+    cout << r.status_code << " for GET from " << path << endl;
+    return json::parse(r.text);
+}
+
 json UpDao::post(const string& path, const string& body) {
     Response r =  Post(Url{UP_API + path}, BEARER, Body{body});
     cout << r.status_code << " for POST to " << path << endl;
     return json::parse(r.text);
 }
 
+Parameter UpDao::since(const string& date) {
+    return Parameter{"filter[since]", date};
+}
+
+Parameter UpDao::until(const string& date) {
+    return Parameter{"filter[until]", date};
+}
 
 vector<Transaction> UpDao::addTransactions(const json& transactionsData, vector<Transaction>& transactions) {
     for (auto &transaction: transactionsData["data"]) {
