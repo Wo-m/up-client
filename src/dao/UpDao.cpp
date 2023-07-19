@@ -30,22 +30,8 @@ vector<Transaction> UpDao::getTransactions(const string &accountId, const string
 
     vector<Transaction> transactions = std::vector<Transaction>();
 
-    // FIXME while (true) is a bit mid
-    while (true) {
-        // TODO move transaction mapping to class/method (could put in transaction.h)
-        for (auto &transaction: transactionsData["data"]) {
-            transactions.push_back(
-                    {
-                            transaction["id"],
-                            transaction["attributes"]["description"],
-                            transaction["relationships"]["category"]["data"]["id"] == nullptr ? "null"
-                                                                                              : transaction["relationships"]["category"]["data"]["id"],
-                            stof((string) transaction["attributes"]["amount"]["value"]),
-                            transaction["attributes"]["createdAt"],
-                            transaction["attributes"]["settledAt"] == nullptr ? "null"
-                                                                              : transaction["attributes"]["settledAt"]
-                    });
-        };
+    for(;;) {
+        addTransactions(transactionsData, transactions);
 
         // No more pages
         if (transactionsData["links"]["next"] == nullptr) break;
@@ -86,4 +72,23 @@ json UpDao::post(const string& path, const string& body) {
     Response r =  Post(Url{UP_API + path}, BEARER, Body{body});
     cout << r.status_code << " for POST to " << path << endl;
     return json::parse(r.text);
+}
+
+
+vector<Transaction> UpDao::addTransactions(const json& transactionsData, vector<Transaction>& transactions) {
+    for (auto &transaction: transactionsData["data"]) {
+        transactions.push_back(
+                {
+                        transaction["id"],
+                        transaction["attributes"]["description"],
+                        transaction["relationships"]["category"]["data"] == nullptr ? "null"
+                                                                                          : transaction["relationships"]["category"]["data"]["id"],
+                        stof((string) transaction["attributes"]["amount"]["value"]),
+                        transaction["attributes"]["createdAt"],
+                        transaction["attributes"]["settledAt"] == nullptr ? "null"
+                                                                          : transaction["attributes"]["settledAt"]
+                });
+    };
+
+    return transactions;
 }

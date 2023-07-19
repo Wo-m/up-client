@@ -18,6 +18,7 @@ public:
 private:
     nlohmann::json get(const std::string& path, const cpr::Parameters& params);
     nlohmann::json post(const std::string& path, const std::string& body);
+    static std::vector<Transaction> addTransactions(const nlohmann::json& transactionsData, std::vector<Transaction>& transactions);
 
     cpr::Bearer BEARER = {""};
 
