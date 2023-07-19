@@ -3,6 +3,7 @@
 //
 
 #include "dao/UpDao.h"
+#include "config/Config.h"
 #include <iostream>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
@@ -13,8 +14,7 @@ using namespace cpr;
 using namespace nlohmann;
 
 UpDao::UpDao() {
-    auto config = toml::parse("/Users/dominicthompson/Documents/git/up-client/src/config.toml");
-    API_KEY = toml::find<string>(config, "key");
+    API_KEY = Config::up_api_key;
     BEARER = Bearer{API_KEY};
 }
 

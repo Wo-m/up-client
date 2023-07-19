@@ -5,7 +5,8 @@ project(up_client)
 set(CMAKE_CXX_STANDARD 17)  # C++ Standard
 
 set(SOURCES                 # All .cpp files in src/
-        src/UpDao.cpp)
+        src/dao/UpDao.cpp
+        src/config/Config.cpp)
 
 set(LIBRARY_NAME engine)    # Default name for the library built from src/*.cpp (change if you wish)
 
