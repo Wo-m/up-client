@@ -25,18 +25,9 @@ UpDao::UpDao() {
  */
 vector<Transaction> UpDao::getTransactions(const string &accountId, const string& since_, const string& until_) {
     Parameters parameters = Parameters{PAGE_SIZE, since(since_), until(until_)};
-    basic_json transactionsData = this->get("accounts/" + accountId + "/transactions",parameters);
-    vector<Transaction> transactions = std::vector<Transaction>();
+    basic_json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
 
-    for(;;) {
-        addTransactions(transactionsData, transactions);
-
-        // No more pages
-        if (transactionsData["links"]["next"] == nullptr) break;
-
-        // Next Page
-        transactionsData = getNext(((string) transactionsData["links"]["next"]));
-    };
+    vector<Transaction> transactions = mapTransactions(transactionsData);
 
     return transactions;
 }
@@ -67,10 +58,32 @@ json UpDao::get(const string& path, const Parameters& params) {
     return json::parse(r.text);
 }
 
-json UpDao::getNext(const string& path) {
-    Response r = Get(Url{path}, BEARER);
+/**
+ * Get request that supports paged responses
+ * @param path
+ * @param params
+ * @return
+ */
+json UpDao::getPaged(const std::string &path, const cpr::Parameters &params) {
+    Response r = Get(Url{UP_API + path}, BEARER, params);
     cout << r.status_code << " for GET from " << path << endl;
-    return json::parse(r.text);
+    json data = json::parse(r.text);
+
+    auto next = data["links"]["next"];
+
+    // pagination
+    while (next != nullptr) {
+        r = Get(Url{data["links"]["next"]}, BEARER);
+
+        cout << r.status_code << " for GET from " << path << endl;
+
+        json nextData = json::parse(r.text);
+        data["data"].insert(data["data"].end(), nextData["data"].begin(), nextData["data"].end());
+
+        next = nextData["links"]["next"];
+    }
+
+    return data;
 }
 
 json UpDao::post(const string& path, const string& body) {
@@ -79,15 +92,8 @@ json UpDao::post(const string& path, const string& body) {
     return json::parse(r.text);
 }
 
-Parameter UpDao::since(const string& date) {
-    return Parameter{"filter[since]", date};
-}
-
-Parameter UpDao::until(const string& date) {
-    return Parameter{"filter[until]", date};
-}
-
-vector<Transaction> UpDao::addTransactions(const json& transactionsData, vector<Transaction>& transactions) {
+vector<Transaction> UpDao::mapTransactions(const json& transactionsData) {
+    vector<Transaction> transactions;
     for (auto &transaction: transactionsData["data"]) {
         transactions.push_back(
                 {

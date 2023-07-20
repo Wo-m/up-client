@@ -18,13 +18,13 @@ public:
 
 private:
     nlohmann::json get(const std::string& path, const cpr::Parameters& params);
-    nlohmann::json getNext(const std::string& path);
+    nlohmann::json getPaged(const std::string& path, const cpr::Parameters& params);
     nlohmann::json post(const std::string& path, const std::string& body);
 
     // Static Helper Methods
-    static cpr::Parameter since(const std::string& date);
-    static cpr::Parameter until(const std::string& date);
-    static std::vector<Transaction> addTransactions(const nlohmann::json& transactionsData, std::vector<Transaction>& transactions);
+    static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", date};}
+    static cpr::Parameter until(const std::string& date) { return cpr::Parameter{"filter[until]", date};}
+    static std::vector<Transaction> mapTransactions(const nlohmann::json& transactionsData);
 
     // CONSTANTS
     std::string UP_API = "https://api.up.com.au/api/v1/";
