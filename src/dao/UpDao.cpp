@@ -25,7 +25,7 @@ UpDao::UpDao() {
  */
 vector<Transaction> UpDao::getTransactions(const string &accountId, const string& since_, const string& until_) {
     Parameters parameters = Parameters{PAGE_SIZE, since(since_), until(until_)};
-    basic_json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
+    json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
 
     vector<Transaction> transactions = mapTransactions(transactionsData);
 
@@ -37,9 +37,10 @@ vector<Transaction> UpDao::getTransactions(const string &accountId, const string
  * @return
  */
 Account UpDao::getTransactionalAccount() {
-    basic_json accountsData = this->get("accounts", Parameters{{"filter[accountType]", "TRANSACTIONAL"}});
+    json accountsData = this->get("accounts", Parameters{{"filter[accountType]", "TRANSACTIONAL"}});
 
-    basic_json accountData = accountsData["data"][0];
+    // should only be one account
+    json accountData = accountsData["data"][0];
 
     Account account =
     {
@@ -51,7 +52,7 @@ Account UpDao::getTransactionalAccount() {
     return account;
 }
 
-// private
+// private ------------------------------
 json UpDao::get(const string& path, const Parameters& params) {
     Response r = Get(Url{UP_API + path}, BEARER, params);
     cout << r.status_code << " for GET from " << path << endl;

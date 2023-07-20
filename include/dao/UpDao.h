@@ -13,6 +13,7 @@
 class UpDao {
 public:
     UpDao();
+
     Account getTransactionalAccount();
     std::vector<Transaction> getTransactions(const std::string& accountId, const std::string& since, const std::string& until);
 
