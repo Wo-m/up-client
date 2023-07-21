@@ -11,6 +11,7 @@ struct Transaction {
     float amount;
     std::string description;
     std::string category;
+    std::string subCategory;
     std::string createdAt;
     std::string settledAt;
 
@@ -18,6 +19,7 @@ struct Transaction {
         return "amount: " + std::to_string(amount)
         + " description: " + description
         + " category: " + category
+        + " subCategory: " + subCategory
         + " createdAt: " + createdAt;
     }
 };

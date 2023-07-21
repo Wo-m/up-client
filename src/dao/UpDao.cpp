@@ -3,7 +3,6 @@
 //
 
 #include "dao/UpDao.h"
-#include "config/Config.h"
 #include <iostream>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
@@ -68,14 +67,13 @@ json UpDao::get(const string& path, const Parameters& params) {
 json UpDao::getPaged(const std::string &path, const cpr::Parameters &params) {
     Response r = Get(Url{UP_API + path}, BEARER, params);
     cout << r.status_code << " for GET from " << path << endl;
-    json data = json::parse(r.text);
 
+    json data = json::parse(r.text);
     auto next = data["links"]["next"];
 
     // pagination
     while (next != nullptr) {
         r = Get(Url{data["links"]["next"]}, BEARER);
-
         cout << r.status_code << " for GET from " << path << endl;
 
         json nextData = json::parse(r.text);
@@ -99,15 +97,16 @@ vector<Transaction> UpDao::mapTransactions(const json& transactionsData) {
         transactions.push_back(
                 {
                         transaction["id"],
-                        transaction["attributes"]["description"],
-                        transaction["relationships"]["category"]["data"] == nullptr ? "null"
-                                                                                          : transaction["relationships"]["category"]["data"]["id"],
                         stof((string) transaction["attributes"]["amount"]["value"]),
+                        transaction["attributes"]["description"],
+                        transaction["relationships"]["parentCategory"]["data"] == nullptr ? "null"
+                                                                                    : transaction["relationships"]["parentCategory"]["data"]["id"],
+                        transaction["relationships"]["category"]["data"] == nullptr ? "null"
+                                                                                    : transaction["relationships"]["category"]["data"]["id"],
                         transaction["attributes"]["createdAt"],
                         transaction["attributes"]["settledAt"] == nullptr ? "null"
                                                                           : transaction["attributes"]["settledAt"]
                 });
     };
-
     return transactions;
 }
