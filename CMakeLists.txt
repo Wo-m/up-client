@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 project(up_client)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(VCPKG_TARGET_TRIPLET arm64-osx)
+
+include(/Users/dominicthompson/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 # SETUP >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 set(CMAKE_CXX_STANDARD 17)  # C++ Standard
@@ -20,7 +24,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # - DEPENDENCIES ----------------------------------------------------------------
 # Rest
 find_package(cpr CONFIG REQUIRED)
-target_link_libraries(${LIBRARY_NAME} PUBLIC cpr::cpr)
+target_link_libraries(${LIBRARY_NAME} PRIVATE cpr::cpr)
 # Json
 find_package(nlohmann_json CONFIG REQUIRED)
 target_link_libraries(${LIBRARY_NAME} PUBLIC nlohmann_json::nlohmann_json)
