@@ -1,0 +1,26 @@
+[
+{
+  "directory": "/Users/dominicthompson/Documents/git/up-client",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DCURL_STATICLIB -I/Users/dominicthompson/Documents/git/up-client/include -isystem /Users/dominicthompson/Documents/git/up-client/vcpkg_installed/arm64-osx/include -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.0.sdk -o CMakeFiles/engine.dir/src/dao/UpDao.cpp.o -c /Users/dominicthompson/Documents/git/up-client/src/dao/UpDao.cpp",
+  "file": "/Users/dominicthompson/Documents/git/up-client/src/dao/UpDao.cpp",
+  "output": "CMakeFiles/engine.dir/src/dao/UpDao.cpp.o"
+},
+{
+  "directory": "/Users/dominicthompson/Documents/git/up-client",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DCURL_STATICLIB -I/Users/dominicthompson/Documents/git/up-client/include -isystem /Users/dominicthompson/Documents/git/up-client/vcpkg_installed/arm64-osx/include -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.0.sdk -o CMakeFiles/engine.dir/src/config/Config.cpp.o -c /Users/dominicthompson/Documents/git/up-client/src/config/Config.cpp",
+  "file": "/Users/dominicthompson/Documents/git/up-client/src/config/Config.cpp",
+  "output": "CMakeFiles/engine.dir/src/config/Config.cpp.o"
+},
+{
+  "directory": "/Users/dominicthompson/Documents/git/up-client",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DCURL_STATICLIB -I/Users/dominicthompson/Documents/git/up-client/include -isystem /Users/dominicthompson/Documents/git/up-client/vcpkg_installed/arm64-osx/include -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.0.sdk -o CMakeFiles/engine.dir/src/service/UpService.cpp.o -c /Users/dominicthompson/Documents/git/up-client/src/service/UpService.cpp",
+  "file": "/Users/dominicthompson/Documents/git/up-client/src/service/UpService.cpp",
+  "output": "CMakeFiles/engine.dir/src/service/UpService.cpp.o"
+},
+{
+  "directory": "/Users/dominicthompson/Documents/git/up-client",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/dominicthompson/Documents/git/up-client/include -isystem /Users/dominicthompson/Documents/git/up-client/vcpkg_installed/arm64-osx/include -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.0.sdk -o CMakeFiles/up-client.dir/app/main.cpp.o -c /Users/dominicthompson/Documents/git/up-client/app/main.cpp",
+  "file": "/Users/dominicthompson/Documents/git/up-client/app/main.cpp",
+  "output": "CMakeFiles/up-client.dir/app/main.cpp.o"
+}
+]
