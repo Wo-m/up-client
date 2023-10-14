@@ -4,3 +4,7 @@
 /Makefile
 /up-client
 /vcpkg-manifest-install.log
+/vcpkg_installed/
+/.idea
+/.cache
+/.DS_Store

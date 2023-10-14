@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.25)
 project(up_client)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(VCPKG_TARGET_TRIPLET arm64-osx)
 
+# Generate compile_commands.json for LSP
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# CMake needs explicit decleration of triplet
+# and build script included
+set(VCPKG_TARGET_TRIPLET arm64-osx)
 include(/Users/dominicthompson/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 # SETUP >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
