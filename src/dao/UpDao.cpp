@@ -28,6 +28,9 @@ vector<Transaction> UpDao::getTransactions(const string &accountId, const string
 
     vector<Transaction> transactions = mapTransactions(transactionsData);
 
+	// reverse transactions
+	std::reverse(transactions.begin(), transactions.end());
+
     return transactions;
 }
 
@@ -73,8 +76,8 @@ json UpDao::getPaged(const std::string &path, const cpr::Parameters &params) {
 
     // pagination
     while (next != nullptr) {
-        r = Get(Url{data["links"]["next"]}, BEARER);
-        cout << r.status_code << " for GET from " << path << endl;
+        r = Get(Url{next}, BEARER);
+        cout << r.status_code << " for GET from " << path << " page: " << next << endl;
 
         json nextData = json::parse(r.text);
         data["data"].insert(data["data"].end(), nextData["data"].begin(), nextData["data"].end());

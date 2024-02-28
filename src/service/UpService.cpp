@@ -57,5 +57,4 @@ void UpService::logTransactions(const std::string &accountId, const std::string 
     cout << "Total Expense: " << expense << endl;
     cout << "Total Income: " << income << endl;
     cout << "Net: " << income + expense << endl;
-    cout << "test" << endl;
 }
