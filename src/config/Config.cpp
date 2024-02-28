@@ -12,7 +12,7 @@ string Config::up_api_key;
 Config::Config() {
     // static constructor
     if (loaded) return;
-    auto config_ = toml::parse("/Users/dominicthompson/Documents/git/up-client/src/config/config.toml");
+    auto config_ = toml::parse("/Users/dominicthompson/git/up-client/src/config/config.toml");
 
     // Load all values
     up_api_key = toml::find<string>(config_, "up_api_key");
