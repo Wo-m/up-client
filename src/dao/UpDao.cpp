@@ -3,6 +3,7 @@
 //
 
 #include "dao/UpDao.h"
+#include <cpr/curl_container.h>
 #include <iostream>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
@@ -23,7 +24,12 @@ UpDao::UpDao() {
  * @return
  */
 vector<Transaction> UpDao::getTransactions(const string &accountId, const string& since_, const string& until_) {
-    Parameters parameters = Parameters{PAGE_SIZE, since(since_), until(until_)};
+    Parameters parameters = Parameters{PAGE_SIZE};
+    if (since_ != "")
+        parameters.Add(since(since_));
+    if (until_ != "")
+        parameters.Add(until(until_));
+
     json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
 
     vector<Transaction> transactions = mapTransactions(transactionsData);

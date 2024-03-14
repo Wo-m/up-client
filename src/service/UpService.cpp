@@ -5,14 +5,11 @@
 #include "service/UpService.h"
 #include "model/CategorySummary.h"
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
 UpService::UpService() {
-}
-
-Account UpService::getTransactionalAccount() {
-    return upDao.getTransactionalAccount();
 }
 
 void UpService::logCategorySummary(const std::string &accountId, const std::string &since, const std::string &until) {
@@ -57,4 +54,12 @@ void UpService::logTransactions(const std::string &accountId, const std::string 
     cout << "Total Expense: " << expense << endl;
     cout << "Total Income: " << income << endl;
     cout << "Net: " << income + expense << endl;
+}
+
+vector<Transaction> UpService::getTransactions(const std::string &accountId, const std::string &since, const std::string &until) {
+    return upDao.getTransactions(accountId, since, until);
+}
+
+Account UpService::getTransactionalAccount() {
+    return upDao.getTransactionalAccount();
 }
