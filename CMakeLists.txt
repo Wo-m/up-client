@@ -36,7 +36,9 @@ target_link_libraries(${LIBRARY_NAME} PUBLIC nlohmann_json::nlohmann_json)
 # Toml
 find_package(toml11 CONFIG REQUIRED)
 target_link_libraries(${LIBRARY_NAME} PRIVATE toml11::toml11)
-
+# String fmt
+find_package(fmt CONFIG REQUIRED)
+target_link_libraries(${LIBRARY_NAME} PUBLIC fmt::fmt)
 
 # EXECUTABLE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 add_executable(up-client app/main.cpp)                      # Create executable

@@ -11,5 +11,7 @@
   }, {
     "name" : "toml11",
     "version>=" : "3.7.1"
+  }, {
+    "name" : "fmt"
   } ]
 }
