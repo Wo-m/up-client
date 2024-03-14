@@ -11,10 +11,9 @@ class UpService {
 public:
     UpService();
 
-    Account getTransactionalAccount();
-    std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since, const std::string &until);
     void logTransactions(const std::string& accountId, const std::string& since, const std::string& until);
-    void logCategorySummary(const std::string& accountId, const std::string& since, const std::string& until);
+    std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since, const std::string &until);
+    Account getTransactionalAccount();
 
 private:
     UpDao upDao;
