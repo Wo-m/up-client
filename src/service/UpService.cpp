@@ -3,6 +3,7 @@
 //
 
 #include "service/UpService.h"
+#include <fmt/core.h>
 #include <iostream>
 #include <vector>
 #include <cpr/curl_container.h>
@@ -21,7 +22,7 @@ UpService::UpService() {
 void UpService::logTransactions(const std::string &accountId, const std::string &since, const std::string &until) {
     vector<Transaction> transactions = getTransactions(accountId, since, until);
     for (auto &transaction : transactions) {
-        cout << transaction.summary() << std::endl;
+        fmt::print(transaction.summary());
     }
 }
 

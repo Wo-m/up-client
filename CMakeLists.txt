@@ -13,7 +13,6 @@ include(/Users/dominicthompson/vcpkg/scripts/buildsystems/vcpkg.cmake)
 set(CMAKE_CXX_STANDARD 17)  # C++ Standard
 
 set(SOURCES                 # All .cpp files in src/
-        src/dao/UpDao.cpp
         src/config/Config.cpp 
         src/service/UpService.cpp)
 

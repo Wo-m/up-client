@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <fmt/format.h>
 
 struct Transaction {
     std::string id;
@@ -15,11 +16,21 @@ struct Transaction {
     std::string createdAt;
     std::string settledAt;
 
+    std::string csv_entry() {
+        return fmt::format("{:.2f},{},{},{},{}\n", 
+                           amount,
+                           createdAt,
+                           category,
+                           subCategory,
+                           description);
+    }
+
     std::string summary() const {
-        return "amount: " + std::to_string(amount)
-        + " description: " + description
-        + " category: " + category
-        + " subCategory: " + subCategory
-        + " createdAt: " + createdAt;
+        return fmt::format("amount: {:.2f} description: {} category: {} subCategory: {} createdAt: {}",
+                           amount,
+                           description,
+                           category,
+                           subCategory,
+                           createdAt); 
     }
 };
