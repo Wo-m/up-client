@@ -3,8 +3,12 @@
 //
 
 #include "service/UpService.h"
+#include <cpr/parameters.h>
+#include <cstdio>
 #include <fmt/core.h>
+#include <fstream>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <cpr/curl_container.h>
 #include <iostream>
@@ -26,6 +30,7 @@ void UpService::logTransactions(const std::string &accountId, const std::string 
     }
 }
 
+
 /**
  * Get transactions for account
  * @param accountId
@@ -44,8 +49,8 @@ vector<Transaction> UpService::getTransactions(const string &accountId, const st
 
     vector<Transaction> transactions = mapTransactions(transactionsData);
 
-	// reverse transactions
-	std::reverse(transactions.begin(), transactions.end());
+    // reverse transactions
+    std::reverse(transactions.begin(), transactions.end());
 
     return transactions;
 }
@@ -114,23 +119,8 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
     vector<Transaction> transactions;
     for (auto &transaction: transactionsData["data"]) {
 
-        auto description = transaction["attributes"]["description"];
-        if (description == ME_ANZ) {
+        if (skipTransaction(transaction["attributes"]["description"]))
             continue;
-        }
-
-        if (description == ME) {
-            continue;
-        }
-
-        if (description == "Transfer from Savings") {
-            continue;
-        }
-
-        if (description == "Transfer to Savings") {
-            continue;
-        }
-
 
         transactions.push_back(
                 {
@@ -149,6 +139,25 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
     return transactions;
 }
 
+bool UpService::skipTransaction(std::string description) {
+    if (description == ME_ANZ) {
+        return true;
+    }
+
+    if (description == ME) {
+        return true;
+    }
+
+    if (description == "Transfer from Savings") {
+        return true;
+    }
+
+    if (description == "Transfer to Savings") {
+        return true;
+    }
+    return false;
+}
+
 std::string UpService::convertToRFC3339(const std::string& date) {
     std::string day = date.substr(0, 2);
     std::string month = date.substr(3, 2);
@@ -162,4 +171,27 @@ std::string UpService::convertToRFC3339(const std::string& date) {
     return fmt::format("{}-{}-{}T{}Z", year, month, day, start_of_day);
 }
 
+/**
+* ad hoc to store all sub-categories
+* in a josn file in pairs -> (sub-cat, cat)
+*/
+void UpService::getCategories() {
+    Parameters params;
+    json data = this->get("categories/", params);
 
+    data = data["data"];
+
+    json categories = json::array();
+    for (auto& category : data) {
+        json parent = category["relationships"]["parent"]["data"];
+        if (parent.empty()) continue;
+
+        categories.insert(categories.begin(), {{category["id"], parent["id"]}});
+    }
+
+    string json_str = to_string(categories);
+    ofstream file;
+    file.open("categories.json");
+    file << json_str;
+    file.close();
+}

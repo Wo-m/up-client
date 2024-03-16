@@ -16,6 +16,7 @@ public:
     void logTransactions(const std::string& accountId, const std::string& since, const std::string& until);
     std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since, const std::string &until);
     Account getTransactionalAccount();
+    void getCategories();
 
 private:
     std::vector<Transaction> filterReturnTransfers(std::vector<Transaction> transactions);
@@ -23,6 +24,7 @@ private:
     nlohmann::json getPaged(const std::string& path, const cpr::Parameters& params);
     nlohmann::json post(const std::string& path, const std::string& body);
     static std::string convertToRFC3339(const std::string& inputDate);
+    bool skipTransaction(std::string description);
 
     // Static Helper Methods
     static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", convertToRFC3339(date)};}
