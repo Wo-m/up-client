@@ -22,11 +22,12 @@ private:
     nlohmann::json get(const std::string& path, const cpr::Parameters& params);
     nlohmann::json getPaged(const std::string& path, const cpr::Parameters& params);
     nlohmann::json post(const std::string& path, const std::string& body);
+    static std::string convertToRFC3339(const std::string& inputDate);
 
     // Static Helper Methods
-    static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", date};}
-    static cpr::Parameter until(const std::string& date) { return cpr::Parameter{"filter[until]", date};}
-    static std::vector<Transaction> mapTransactions(const nlohmann::json& transactionsData);
+    static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", convertToRFC3339(date)};}
+    static cpr::Parameter until(const std::string& date) { return cpr::Parameter{"filter[until]", convertToRFC3339(date)};}
+    std::vector<Transaction> mapTransactions(const nlohmann::json& transactionsData);
 
     // CONSTANTS
     cpr::Parameter PAGE_SIZE = cpr::Parameter{"page[size]", "100"};

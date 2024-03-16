@@ -113,6 +113,25 @@ json UpService::post(const string& path, const string& body) {
 vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
     vector<Transaction> transactions;
     for (auto &transaction: transactionsData["data"]) {
+
+        auto description = transaction["attributes"]["description"];
+        if (description == ME_ANZ) {
+            continue;
+        }
+
+        if (description == ME) {
+            continue;
+        }
+
+        if (description == "Transfer from Savings") {
+            continue;
+        }
+
+        if (description == "Transfer to Savings") {
+            continue;
+        }
+
+
         transactions.push_back(
                 {
                         transaction["id"],
@@ -129,3 +148,18 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
     };
     return transactions;
 }
+
+std::string UpService::convertToRFC3339(const std::string& date) {
+    std::string day = date.substr(0, 2);
+    std::string month = date.substr(3, 2);
+    std::string year = date.substr(6, 4);
+
+    // TODO move these to constants
+    //      handle choice as params
+    auto start_of_day = "00:00:00.00";
+    auto end_of_day = "23:59:59.99";
+
+    return fmt::format("{}-{}-{}T{}Z", year, month, day, start_of_day);
+}
+
+

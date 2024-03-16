@@ -1,5 +1,6 @@
 #include "config/Config.h"
 #include "service/UpService.h"
+#include "service/FileWriter.h"
 
 using namespace std;
 
@@ -9,5 +10,6 @@ int main() {
 
     UpService upService;
     Account account = upService.getTransactionalAccount();
-    upService.logTransactions(account.id, "2023-06-18T00:00:00+10:00", "2023-07-18T00:00:00+10:00");
+    auto transactions = upService.getTransactions(account.id, "15/03/2024",  "");
+    FileWriter::write_to_csv(transactions);
 }
