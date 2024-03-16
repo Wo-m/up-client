@@ -14,7 +14,7 @@ public:
     UpService();
 
     void logTransactions(const std::string& accountId, const std::string& since, const std::string& until);
-    std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since, const std::string &until);
+    std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since);
     Account getTransactionalAccount();
     void getCategories();
 
@@ -27,7 +27,7 @@ private:
     bool skipTransaction(std::string description);
 
     // Static Helper Methods
-    static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", convertToRFC3339(date)};}
+    static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", date};}
     static cpr::Parameter until(const std::string& date) { return cpr::Parameter{"filter[until]", convertToRFC3339(date)};}
     std::vector<Transaction> mapTransactions(const nlohmann::json& transactionsData);
 

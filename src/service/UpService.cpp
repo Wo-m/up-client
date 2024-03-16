@@ -4,10 +4,10 @@
 
 #include "service/UpService.h"
 #include <cpr/parameters.h>
-#include <cstdio>
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
 #include <cpr/curl_container.h>
@@ -24,12 +24,11 @@ UpService::UpService() {
 }
 
 void UpService::logTransactions(const std::string &accountId, const std::string &since, const std::string &until) {
-    vector<Transaction> transactions = getTransactions(accountId, since, until);
+    vector<Transaction> transactions = getTransactions(accountId, since);
     for (auto &transaction : transactions) {
         fmt::print(transaction.summary());
     }
 }
-
 
 /**
  * Get transactions for account
@@ -38,12 +37,10 @@ void UpService::logTransactions(const std::string &accountId, const std::string 
  * @param until
  * @return
  */
-vector<Transaction> UpService::getTransactions(const string &accountId, const string& since_, const string& until_) {
+vector<Transaction> UpService::getTransactions(const string &accountId, const string& since_) {
     Parameters parameters = Parameters{PAGE_SIZE};
     if (since_ != "")
         parameters.Add(since(since_));
-    if (until_ != "")
-        parameters.Add(until(until_));
 
     json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
 
@@ -155,6 +152,11 @@ bool UpService::skipTransaction(std::string description) {
     if (description == "Transfer to Savings") {
         return true;
     }
+
+    if (description == "Quick save transfer to Savings") {
+        return true;
+    }
+
     return false;
 }
 
@@ -181,12 +183,13 @@ void UpService::getCategories() {
 
     data = data["data"];
 
-    json categories = json::array();
+    json categories;
+    int i = 0;
     for (auto& category : data) {
         json parent = category["relationships"]["parent"]["data"];
         if (parent.empty()) continue;
-
-        categories.insert(categories.begin(), {{category["id"], parent["id"]}});
+        
+        categories[i++] = json::array({category["id"], parent["id"]});
     }
 
     string json_str = to_string(categories);
