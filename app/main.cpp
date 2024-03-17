@@ -53,11 +53,9 @@ void correctNulls(vector<Transaction>& transactions) {
 }
 
 std::string getLastTransactionDate() {
-    ifstream last_date;
-    last_date.open("last_date.txt");
-    string line = "";
-    getline(last_date, line);
-    return line;
+    ifstream last_date("stats.json");
+    auto stats = nlohmann::json::parse(last_date);
+    return stats["last_date"];
 }
 
 int main() {
