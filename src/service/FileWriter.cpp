@@ -16,6 +16,32 @@ struct Stats {
     float expense;
     float total;
     std::string last_date;
+
+    nlohmann::json to_json() {
+        auto json = nlohmann::json::object();
+        json["income"] = fmt::format("{:.2f}", income);
+        json["expense"] = fmt::format("{:.2f}", expense);
+        json["total"] = fmt::format("{:.2f}", total);
+        json["last_date"] = last_date;
+
+        return json;
+    }
+
+    static Stats from_json(nlohmann::json json) {
+        return {
+            stof((std::string)json["income"]),
+            stof((std::string)json["expense"]),
+            stof((std::string)json["total"]),
+            json["last_date"]
+        };
+    }
+
+    void add(Stats stats) {
+        income += stats.income;
+        expense += stats.expense;
+        total = income + expense;
+        last_date = stats.last_date;
+    }
 };
 
 FileWriter::FileWriter() {
@@ -41,28 +67,8 @@ Stats calculate_stats(std::vector<Transaction> transactions) {
     };
 }
 
-void write_stats(Stats stats, bool replace) {
-    float curr_expense, curr_income, curr_total;
-    nlohmann::json stats_json;
-    if (!replace) {
-        std::ifstream stream("stats.json");
-        stats_json = nlohmann::json::parse(stream);
-
-        curr_income = stof((std::string)stats_json["income"]);
-        curr_expense = stof((std::string)stats_json["expense"]);
-        curr_total = stof((std::string)stats_json["total"]);
-    } else {
-        curr_total = 0;
-        curr_expense = 0;
-        curr_income = 0;
-    }
-
-    stats_json["income"] = fmt::format("{:.2f}", curr_income + stats.income);
-    stats_json["expense"] = fmt::format("{:.2f}", curr_expense + stats.expense);
-    stats_json["total"] = fmt::format("{:.2f}", curr_total + stats.income + stats.expense);
-    stats_json["last_date"] = stats.last_date;
-
-    std::string json = nlohmann::to_string(stats_json);
+void write_stats(Stats stats) {
+    std::string json = nlohmann::to_string(stats.to_json());
     std::ofstream file;
     file.open("stats.json");
     file << json;
@@ -87,7 +93,8 @@ void FileWriter::recalculate_stats() {
             // eof
         }
     }
-    write_stats(calculate_stats(transactions), true);
+    auto stats = calculate_stats(transactions);
+    write_stats(stats);
 }
 
 
@@ -103,5 +110,10 @@ void FileWriter::write_to_csv(std::vector<Transaction> transactions) {
     }
     csv.close();
 
-    write_stats(calculate_stats(transactions), false);
+    std::ifstream stream("stats.json");
+    auto stats_json = nlohmann::json::parse(stream);
+    Stats current = Stats::from_json(stats_json);
+    current.add(calculate_stats(transactions));
+
+    write_stats(current);
 }

@@ -46,8 +46,10 @@ vector<Transaction> UpService::getTransactions(const string &accountId, const st
 
     vector<Transaction> transactions = mapTransactions(transactionsData);
 
+
     // reverse transactions
     std::reverse(transactions.begin(), transactions.end());
+    transactions.erase(transactions.begin());
 
     return transactions;
 }
