@@ -121,7 +121,6 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
 
         transactions.push_back(
                 {
-                        transaction["id"],
                         stof((string) transaction["attributes"]["amount"]["value"]),
                         transaction["attributes"]["description"],
                         transaction["relationships"]["parentCategory"]["data"] == nullptr ? "null"
@@ -129,8 +128,6 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
                         transaction["relationships"]["category"]["data"] == nullptr ? "null"
                                                                                     : transaction["relationships"]["category"]["data"]["id"],
                         transaction["attributes"]["createdAt"],
-                        transaction["attributes"]["settledAt"] == nullptr ? "null"
-                                                                          : transaction["attributes"]["settledAt"]
                 });
     };
     return transactions;
