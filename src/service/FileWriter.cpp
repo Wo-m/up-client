@@ -11,6 +11,29 @@
 FileWriter::FileWriter() {
 }
 
+void updateStats(float income, float expense, std::string last_date) {
+    std::ifstream stream("stats.json");
+    auto stats = nlohmann::json::parse(stream);
+
+    float curr_income = stof((std::string)stats["income"]);
+    float curr_expense = stof((std::string)stats["expense"]);
+    float curr_total = stof((std::string)stats["total"]);
+
+    stats["last_date"] = last_date;
+    stats["income"] = fmt::format("{:.2f}", curr_income + income);
+    stats["expense"] = fmt::format("{:.2f}", curr_expense + expense);
+    stats["total"] = fmt::format("{:.2f}", curr_total + income + expense);
+
+    std::string json = nlohmann::to_string(stats);
+    std::ofstream file;
+    file.open("stats.json");
+    file << json;
+    file.close();
+}
+
+void resetStats() {
+}
+
 void FileWriter::write_to_csv(std::vector<Transaction> transactions) {
     std::ofstream csv;
     csv.open("data.csv", std::ios_base::app);
@@ -29,22 +52,5 @@ void FileWriter::write_to_csv(std::vector<Transaction> transactions) {
     }
     csv.close();
 
-    // update stats
-    std::ifstream stream("stats.json");
-    auto stats = nlohmann::json::parse(stream);
-
-    float curr_income = stof((std::string)stats["income"]);
-    float curr_expense = stof((std::string)stats["expense"]);
-    float curr_total = stof((std::string)stats["total"]);
-
-    stats["last_date"] = transactions.at(transactions.size() - 1).createdAt;
-    stats["income"] = fmt::format("{:.2f}", curr_income + income);
-    stats["expense"] = fmt::format("{:.2f}", curr_expense + expense);
-    stats["total"] = fmt::format("{:.2f}", curr_total + income + expense);
-
-    std::string json = nlohmann::to_string(stats);
-    std::ofstream file;
-    file.open("stats.json");
-    file << json;
-    file.close();
+    updateStats(income, expense, transactions.at(transactions.size() - 1).createdAt);
 }
