@@ -4,6 +4,7 @@
 
 #include "service/UpService.h"
 #include <cpr/parameters.h>
+#include <cstdio>
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
@@ -23,11 +24,23 @@ using namespace nlohmann;
 UpService::UpService() {
 }
 
+std::string getLastTransactionDate() {
+    ifstream last_date("stats.json");
+    auto stats = nlohmann::json::parse(last_date);
+    return stats["last_date"];
+}
+
 void UpService::logTransactions(const std::string &accountId, const std::string &since, const std::string &until) {
     vector<Transaction> transactions = getTransactions(accountId, since);
     for (auto &transaction : transactions) {
         fmt::print(transaction.summary());
     }
+}
+
+vector<Transaction> UpService::find_new_transactions() {
+    Account account = getTransactionalAccount();
+    string last_date = getLastTransactionDate();
+    return getTransactions(account.id, last_date);
 }
 
 /**
@@ -43,6 +56,11 @@ vector<Transaction> UpService::getTransactions(const string &accountId, const st
         parameters.Add(since(since_));
 
     json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
+
+    if (transactionsData["data"].empty() || transactionsData["data"].size() == 1) {
+        printf("no new transactions\n");
+        exit(0);
+    }
 
     vector<Transaction> transactions = mapTransactions(transactionsData);
 

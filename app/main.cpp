@@ -13,6 +13,11 @@
 
 using namespace std;
 
+// TODO: move to Menu class?
+// Init
+Config config;
+UpService upService;
+
 nlohmann::json getCategories() {
     std::ifstream ifs("categories.json");
     return nlohmann::json::parse(ifs);
@@ -52,20 +57,15 @@ void correctNulls(vector<Transaction>& transactions) {
     }
 }
 
-std::string getLastTransactionDate() {
-    ifstream last_date("stats.json");
-    auto stats = nlohmann::json::parse(last_date);
-    return stats["last_date"];
+void update_transactions() {
+    auto transactions = upService.find_new_transactions();
+    correctNulls(transactions);
+    FileWriter::write_to_csv(transactions);
 }
 
 int main() {
-    // This is just for testing in its current state
     Config();
 
-    UpService upService;
-    Account account = upService.getTransactionalAccount();
-    string last_date = getLastTransactionDate();
-    auto transactions = upService.getTransactions(account.id, last_date);
-    correctNulls(transactions);
-    FileWriter::write_to_csv(transactions);
+    // Menu
+    update_transactions();
 }

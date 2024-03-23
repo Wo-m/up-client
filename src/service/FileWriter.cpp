@@ -53,7 +53,6 @@ Stats calculate_stats(std::vector<Transaction> transactions) {
     for (auto& t : transactions) {
         if (t.category == "income") {
             income += t.amount;
-            fmt::print("{}\n", t.summary());
         } else {
             expense += t.amount;
         }
@@ -106,6 +105,7 @@ void FileWriter::write_to_csv(std::vector<Transaction> transactions) {
     float income = 0;
 
     for (auto& t : transactions) {
+        fmt::print("{}\n", t.summary());
         csv << t.csv_entry();   
     }
     csv.close();
