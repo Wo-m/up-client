@@ -81,18 +81,27 @@ int main() {
 
     // Menu
     // update_transactions();
-    fmt::print("{}\n{}\n",
-               "1: find new transactions",
-               "2: stats");
     string input;
-    cin >> input;
+    while (1) {
+        fmt::print("{}\n{}\n{}\n",
+                   "1: find new transactions",
+                   "2: stats",
+                   "3: recalc stats");
+        cin >> input;
 
-    switch (stoi(input)) {
-        case 1:
-            update_transactions();
-            break;
-        case 2:
-            stats();
-            break;
+        switch (stoi(input)) {
+            case 1:
+                update_transactions();
+                break;
+            case 2:
+                stats();
+                break;
+            case 3:
+                DataManager::recalculate_stats();
+                break;
+            default:
+                return 0;
+        }
+        input.clear();
     }
 }
