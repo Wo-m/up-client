@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD 17)  # C++ Standard
 set(SOURCES                 # All .cpp files in src/
         src/config/Config.cpp 
         src/service/UpService.cpp
-        src/service/FileWriter.cpp)
+        src/service/DataManager.cpp)
 
 set(LIBRARY_NAME engine)    # Default name for the library built from src/*.cpp (change if you wish)
 

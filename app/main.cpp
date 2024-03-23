@@ -1,13 +1,11 @@
 #include "config/Config.h"
 #include "model/Transaction.h"
 #include "service/UpService.h"
-#include "service/FileWriter.h"
-#include <cstdio>
+#include "service/DataManager.h"
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -60,12 +58,41 @@ void correctNulls(vector<Transaction>& transactions) {
 void update_transactions() {
     auto transactions = upService.find_new_transactions();
     correctNulls(transactions);
-    FileWriter::write_to_csv(transactions);
+    Stats current = DataManager::write(transactions);
+    auto new_stats = DataManager::calculate_stats(transactions);
+
+    fmt::print("Statistics for new transactions:\n{}\n Overall:\n{}\n",
+               new_stats.summary(),
+               current.summary());
+}
+
+void stats() {
+    fmt::print("please enter a date (dd/mm/yy): ");
+    string since;
+    cin >> since;
+
+    auto transactions = upService.find_transactions(since);
+    auto stats = DataManager::calculate_stats(transactions);
+    fmt::print("{}\n", stats.summary());
 }
 
 int main() {
     Config();
 
     // Menu
-    update_transactions();
+    // update_transactions();
+    fmt::print("{}\n{}\n",
+               "1: find new transactions",
+               "2: stats");
+    string input;
+    cin >> input;
+
+    switch (stoi(input)) {
+        case 1:
+            update_transactions();
+            break;
+        case 2:
+            stats();
+            break;
+    }
 }

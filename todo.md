@@ -9,6 +9,9 @@
         - stats for time period
         - stats since last paycheck
 - maybe swap to storing with json??
+- tag transactions
+    - expected (rent, mymc, gym, etc)
+    - logging stats to totals for expected and not expected
 
 ### Goals
 - clean up filewriter.cpp and main.cpp

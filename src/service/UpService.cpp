@@ -3,8 +3,10 @@
 //
 
 #include "service/UpService.h"
+#include "model/Transaction.h"
 #include <cpr/parameters.h>
 #include <cstdio>
+#include <exception>
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
@@ -38,23 +40,47 @@ void UpService::logTransactions(const std::string &accountId, const std::string 
 }
 
 vector<Transaction> UpService::find_new_transactions() {
-    Account account = getTransactionalAccount();
+    auto account = getTransactionalAccount();
     string last_date = getLastTransactionDate();
     return getTransactions(account.id, last_date);
 }
 
+// TODO this really should be here given
+// its not going to the api
+std::vector<Transaction> UpService::find_transactions(const std::string &since) {
+    auto since_rfc = convertToRFC3339(since);
+
+    std::ifstream csv;
+    csv.open("data.csv");
+    std::string line;
+
+    auto transactions = std::vector<Transaction>();
+    Transaction t;
+    while(1) {
+        getline(csv, line);
+        try {
+            t = Transaction::csv_line_to_transaction(line);
+        } catch (exception e) {
+            break;
+        }
+        if (t.createdAt < since_rfc) continue;
+        fmt::print("{}\n", t.summary());
+        transactions.push_back(t);
+    }
+    return transactions;
+}
 /**
  * Get transactions for account
  * @param accountId
  * @param since
  * @param until
- * @return
+ * @return  Config();
  */
 vector<Transaction> UpService::getTransactions(const string &accountId, const string& since_) {
     Parameters parameters = Parameters{PAGE_SIZE};
     if (since_ != "")
         parameters.Add(since(since_));
-
+    
     json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
 
     if (transactionsData["data"].empty() || transactionsData["data"].size() == 1) {
@@ -180,14 +206,14 @@ bool UpService::skipTransaction(std::string description) {
 std::string UpService::convertToRFC3339(const std::string& date) {
     std::string day = date.substr(0, 2);
     std::string month = date.substr(3, 2);
-    std::string year = date.substr(6, 4);
+    std::string year = date.substr(6, 2);
 
     // TODO move these to constants
     //      handle choice as params
     auto start_of_day = "00:00:00.00";
     auto end_of_day = "23:59:59.99";
 
-    return fmt::format("{}-{}-{}T{}Z", year, month, day, start_of_day);
+    return fmt::format("{}-{}-{}T{}Z", "20"+year, month, day, start_of_day);
 }
 
 /**

@@ -1,53 +1,19 @@
-#include "service/FileWriter.h"
+#include "service/DataManager.h"
 #include "model/Transaction.h"
-#include <cstdio>
 #include <exception>
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
 #include <nlohmann/json.hpp>
-#include <sstream>
 #include <string>
 #include <vector>
 
-struct Stats {
-    float income;
-    float expense;
-    float total;
-    std::string last_date;
 
-    nlohmann::json to_json() {
-        auto json = nlohmann::json::object();
-        json["income"] = fmt::format("{:.2f}", income);
-        json["expense"] = fmt::format("{:.2f}", expense);
-        json["total"] = fmt::format("{:.2f}", total);
-        json["last_date"] = last_date;
-
-        return json;
-    }
-
-    static Stats from_json(nlohmann::json json) {
-        return {
-            stof((std::string)json["income"]),
-            stof((std::string)json["expense"]),
-            stof((std::string)json["total"]),
-            json["last_date"]
-        };
-    }
-
-    void add(Stats stats) {
-        income += stats.income;
-        expense += stats.expense;
-        total = income + expense;
-        last_date = stats.last_date;
-    }
-};
-
-FileWriter::FileWriter() {
+DataManager::DataManager() {
 }
 
-Stats calculate_stats(std::vector<Transaction> transactions) {
+Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
     float income = 0;
     float expense = 0;
     for (auto& t : transactions) {
@@ -72,13 +38,12 @@ void write_stats(Stats stats) {
     file.open("stats.json");
     file << json;
     file.close();
-
 }
 
 /**
 * handles manual csv edits
 */
-void FileWriter::recalculate_stats() {
+void DataManager::recalculate_stats() {
     std::ifstream csv;
     csv.open("data.csv");
     std::string line;
@@ -97,7 +62,7 @@ void FileWriter::recalculate_stats() {
 }
 
 
-void FileWriter::write_to_csv(std::vector<Transaction> transactions) {
+Stats DataManager::write(std::vector<Transaction> transactions) {
     std::ofstream csv;
     csv.open("data.csv", std::ios_base::app);
 
@@ -116,4 +81,5 @@ void FileWriter::write_to_csv(std::vector<Transaction> transactions) {
     current.add(calculate_stats(transactions));
 
     write_stats(current);
+    return current;
 }
