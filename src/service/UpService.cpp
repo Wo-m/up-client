@@ -85,7 +85,7 @@ vector<Transaction> UpService::getTransactions(const string &accountId, const st
 
     if (transactionsData["data"].empty() || transactionsData["data"].size() == 1) {
         printf("no new transactions\n");
-        exit(0);
+        return {};
     }
 
     vector<Transaction> transactions = mapTransactions(transactionsData);

@@ -57,6 +57,9 @@ void correctNulls(vector<Transaction>& transactions) {
 
 void update_transactions() {
     auto transactions = upService.find_new_transactions();
+    if (transactions.empty())
+        return;
+
     correctNulls(transactions);
     Stats current = DataManager::write(transactions);
     auto new_stats = DataManager::calculate_stats(transactions);
@@ -67,12 +70,19 @@ void update_transactions() {
 }
 
 void stats() {
-    fmt::print("please enter a date (dd/mm/yy): ");
+    fmt::print("please enter a date (dd/mm/yy) [0 for all]: ");
     string since;
     cin >> since;
+    
 
-    auto transactions = upService.find_transactions(since);
-    auto stats = DataManager::calculate_stats(transactions);
+    Stats stats;
+    if (since == "0") {
+        stats = DataManager::get_current_stats();
+    } else {
+        auto transactions = upService.find_transactions(since);
+        stats = DataManager::calculate_stats(transactions);
+    }
+
     fmt::print("{}\n", stats.summary());
 }
 
@@ -83,13 +93,16 @@ int main() {
     // update_transactions();
     string input;
     while (1) {
-        fmt::print("{}\n{}\n{}\n",
+        fmt::print("{}\n{}\n{}\n{}\n",
                    "1: find new transactions",
                    "2: stats",
-                   "3: recalc stats");
+                   "3: recalc stats",
+                   "0: quit");
         cin >> input;
 
         switch (stoi(input)) {
+            case 0:
+                return 0;
             case 1:
                 update_transactions();
                 break;
@@ -100,7 +113,7 @@ int main() {
                 DataManager::recalculate_stats();
                 break;
             default:
-                return 0;
+                fmt::print("not an option, try again\n");
         }
         input.clear();
     }

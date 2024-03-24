@@ -3,11 +3,10 @@
 - menu
     - load new transactions
     - add transactions
-    - recalc stats
     - show stats
-        - overall
-        - stats for time period
         - stats since last paycheck
+        - better date calc
+            - last x dates/weeks
 - maybe swap to storing with json??
 - tag transactions
     - expected (rent, mymc, gym, etc)

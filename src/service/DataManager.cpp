@@ -61,6 +61,11 @@ void DataManager::recalculate_stats() {
     write_stats(stats);
 }
 
+Stats DataManager::get_current_stats() {
+    std::ifstream stream("stats.json");
+    auto stats_json = nlohmann::json::parse(stream);
+    return Stats::from_json(stats_json);
+}
 
 Stats DataManager::write(std::vector<Transaction> transactions) {
     std::ofstream csv;
@@ -75,9 +80,7 @@ Stats DataManager::write(std::vector<Transaction> transactions) {
     }
     csv.close();
 
-    std::ifstream stream("stats.json");
-    auto stats_json = nlohmann::json::parse(stream);
-    Stats current = Stats::from_json(stats_json);
+    Stats current = get_current_stats();
     current.add(calculate_stats(transactions));
 
     write_stats(current);
