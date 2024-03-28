@@ -8,6 +8,7 @@ using namespace std;
 
 bool Config::loaded = false;
 string Config::up_api_key;
+int Config::pay_date;
 
 Config::Config() {
     // static constructor
@@ -16,6 +17,7 @@ Config::Config() {
 
     // Load all values
     up_api_key = toml::find<string>(config_, "up_api_key");
+    pay_date = toml::find<int>(config_, "pay_date");
 
     loaded = true;
 }

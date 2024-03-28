@@ -39,18 +39,38 @@ void update_transactions() {
                current.summary());
 }
 
+// DATE FUNCTOINS ------------
 std::string get_last_monday() {
     auto todays_date = date::floor<date::days>(std::chrono::system_clock::now());
     auto monday = todays_date - (date::weekday{todays_date} - date::Monday);
     return date::format("%d/%m/%y", monday);
 }
 
+std::string get_last_pay() {
+    int pay_date = Config::pay_date;
+    auto todays_date = date::floor<date::days>(std::chrono::system_clock::now());
+    auto todays_date_ymd = date::year_month_day(todays_date);
+    date::year_month_day last_pay;
+
+    if (todays_date_ymd.day() >= date::day(pay_date)) {
+        auto diff = todays_date_ymd.day() - date::day(pay_date);
+        last_pay = todays_date - diff;
+    } else {
+        auto diff = date::day(pay_date) - todays_date_ymd.day();
+        auto last_month = todays_date_ymd - date::months(1);
+        last_pay = date::sys_days{last_month} + diff;
+    }
+
+    return date::format("%d/%m/%y", date::year_month_day{last_pay});
+}
+
 void stats_menu() {
     string choice = get_input(
-        fmt::format("please pick an option:\n{}\n{}\n{}\n",
-               "1: all",
-               "2: week (starting mon)",
-               "3: specific"));
+        fmt::format("please pick an option:\n{}\n{}\n{}\n{}\n",
+                "1: all",
+                "2: week (starting mon)",
+                "3: last pay",
+                "4: specific"));
 
     Stats stats;
     vector<Transaction> transactions;
@@ -64,6 +84,10 @@ void stats_menu() {
             stats = DataManager::calculate_stats(transactions);
             break;
         case 3:
+            transactions = upService.find_transactions(get_last_pay()); // TODO: need to convert this string somehow
+            stats = DataManager::calculate_stats(transactions);
+            break;
+        case 4:
             auto since = get_input("please enter a date (dd/mm/yy)");
             transactions = upService.find_transactions(since);
             stats = DataManager::calculate_stats(transactions);

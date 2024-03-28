@@ -11,5 +11,6 @@ class Config {
     static bool loaded;
 public:
     static std::string up_api_key;
+    static int pay_date;
     Config();
 };

@@ -2,12 +2,11 @@
 ## transactions
 - handle adding new transactions (for rent and stuff)
 - menu
+    - move to class
     - load new transactions
     - add transactions
     - show stats
-        - stats since last paycheck
-        - better date calc
-            - last x dates/weeks
+
 ## Tags
 - tag transactions
     - expected (rent, mymc, gym, etc)
