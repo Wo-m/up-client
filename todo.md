@@ -1,4 +1,5 @@
 ### TODO
+## transactions
 - handle adding new transactions (for rent and stuff)
 - menu
     - load new transactions
@@ -7,13 +8,20 @@
         - stats since last paycheck
         - better date calc
             - last x dates/weeks
-- maybe swap to storing with json??
+## Tags
 - tag transactions
     - expected (rent, mymc, gym, etc)
     - logging stats to totals for expected and not expected
+- make tagging and ignore file based
+
+## dates
+- use date::year_month_day as default date rather than using strings
+- rn year_month_day is converted to string, need it to be other way round
+
+## setup
+- readme
+- vcpkg, tags, ignore
+- api key
 
 ### Goals
 - clean up filewriter.cpp and main.cpp
-- startup setup
-    - enter api key
-    - first run

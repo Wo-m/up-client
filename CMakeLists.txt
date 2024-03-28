@@ -39,6 +39,9 @@ target_link_libraries(${LIBRARY_NAME} PRIVATE toml11::toml11)
 # String fmt
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(${LIBRARY_NAME} PUBLIC fmt::fmt)
+# dates
+find_package(date CONFIG REQUIRED)
+target_link_libraries(${LIBRARY_NAME} PRIVATE date::date date::date-tz)
 
 # EXECUTABLE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 add_executable(up-client app/main.cpp)                      # Create executable

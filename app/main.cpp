@@ -2,12 +2,14 @@
 #include "model/Transaction.h"
 #include "service/UpService.h"
 #include "service/DataManager.h"
+#include <cstdio>
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
+#include <date/date.h>
 
 using namespace std;
 
@@ -15,6 +17,13 @@ using namespace std;
 // Init
 Config config;
 UpService upService;
+
+string get_input(std::string question) {
+    fmt::print("{}\n", question);
+    string input;
+    cin >> input;
+    return input;
+}
 
 void update_transactions() {
     auto transactions = upService.find_new_transactions();
@@ -30,17 +39,35 @@ void update_transactions() {
                current.summary());
 }
 
-void stats() {
-    fmt::print("please enter a date (dd/mm/yy) [0 for all]: ");
-    string since;
-    cin >> since;
+std::string get_last_monday() {
+    auto todays_date = date::floor<date::days>(std::chrono::system_clock::now());
+    auto monday = todays_date - (date::weekday{todays_date} - date::Monday);
+    return date::format("%d/%m/%y", monday);
+}
+
+void stats_menu() {
+    string choice = get_input(
+        fmt::format("please pick an option:\n{}\n{}\n{}\n",
+               "1: all",
+               "2: week (starting mon)",
+               "3: specific"));
 
     Stats stats;
-    if (since == "0") {
-        stats = DataManager::get_current_stats();
-    } else {
-        auto transactions = upService.find_transactions(since);
-        stats = DataManager::calculate_stats(transactions);
+    vector<Transaction> transactions;
+    string date;
+    switch (stoi(choice)) {
+        case 1:
+            stats = DataManager::get_current_stats();
+            break;
+        case 2:
+            transactions = upService.find_transactions(get_last_monday()); // TODO: need to convert this string somehow
+            stats = DataManager::calculate_stats(transactions);
+            break;
+        case 3:
+            auto since = get_input("please enter a date (dd/mm/yy)");
+            transactions = upService.find_transactions(since);
+            stats = DataManager::calculate_stats(transactions);
+            break;
     }
 
     fmt::print("{}\n", stats.summary());
@@ -67,7 +94,7 @@ int main() {
                 update_transactions();
                 break;
             case 2:
-                stats();
+                stats_menu();
                 break;
             case 3:
                 DataManager::recalculate_stats();

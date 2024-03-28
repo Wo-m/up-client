@@ -69,6 +69,7 @@ std::vector<Transaction> UpService::find_transactions(const std::string &since) 
     }
     return transactions;
 }
+
 /**
  * Get transactions for account
  * @param accountId

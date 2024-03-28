@@ -13,5 +13,7 @@
     "version>=" : "3.7.1"
   }, {
     "name" : "fmt"
+  }, {
+    "name" : "date"
   } ]
 }
