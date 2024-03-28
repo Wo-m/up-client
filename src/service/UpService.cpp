@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
+#include <set>
 #include <string>
 #include <vector>
 #include <cpr/curl_container.h>
@@ -24,6 +25,21 @@ using namespace cpr;
 using namespace nlohmann;
 
 UpService::UpService() {
+    // build ignore set
+    std::ifstream ignore_csv;
+    ignore_csv.open("ignore.csv");
+
+    std::string line;
+    std::set<std::string> ignore;
+
+    while (!ignore_csv.eof()) {
+        getline(ignore_csv, line);
+        try {
+            ignore.insert(line);
+        } catch (exception e) {
+            //eof
+        }
+    }
 }
 
 std::string getLastTransactionDate() {
@@ -44,7 +60,6 @@ vector<Transaction> UpService::find_new_transactions() {
     string last_date = getLastTransactionDate();
     return getTransactions(account.id, last_date);
 }
-
 // TODO this really should be here given
 // its not going to the api
 std::vector<Transaction> UpService::find_transactions(const std::string &since) {
@@ -181,27 +196,7 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
 }
 
 bool UpService::skipTransaction(std::string description) {
-    if (description == ME_ANZ) {
-        return true;
-    }
-
-    if (description == ME) {
-        return true;
-    }
-
-    if (description == "Transfer from Savings") {
-        return true;
-    }
-
-    if (description == "Transfer to Savings") {
-        return true;
-    }
-
-    if (description == "Quick save transfer to Savings") {
-        return true;
-    }
-
-    return false;
+    return ignore.find(description) != ignore.end();
 }
 
 std::string UpService::convertToRFC3339(const std::string& date) {

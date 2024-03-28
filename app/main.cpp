@@ -101,7 +101,6 @@ int main() {
     Config();
 
     // Menu
-    // update_transactions();
     string input;
     while (1) {
         fmt::print("{}\n{}\n{}\n{}\n",

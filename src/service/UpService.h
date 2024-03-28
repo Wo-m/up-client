@@ -21,7 +21,6 @@ public:
     void getCategories();
 
 private:
-    std::vector<Transaction> filterReturnTransfers(std::vector<Transaction> transactions);
     nlohmann::json get(const std::string& path, const cpr::Parameters& params);
     nlohmann::json getPaged(const std::string& path, const cpr::Parameters& params);
     nlohmann::json post(const std::string& path, const std::string& body);
@@ -33,12 +32,14 @@ private:
     static cpr::Parameter until(const std::string& date) { return cpr::Parameter{"filter[until]", convertToRFC3339(date)};}
     std::vector<Transaction> mapTransactions(const nlohmann::json& transactionsData);
 
+    // Member vars
+    std::set<std::string> ignore; // descriptions to ignore
+    std::map<std::string, std::string> tag; // description to tag TODO: make tag enum
+
     // CONSTANTS
     cpr::Parameter PAGE_SIZE = cpr::Parameter{"page[size]", "100"};
     std::string UP_API = "https://api.up.com.au/api/v1/";
     cpr::Bearer BEARER = {Config::up_api_key};
-    std::string ME_ANZ = "Me (anz)";
-    std::string ME = "MR DOMINIC JOHN THOM";
 };
 
 
