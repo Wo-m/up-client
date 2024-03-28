@@ -5,8 +5,10 @@
 #pragma once
 #include "model/Account.h"
 #include "model/Transaction.h"
+#include "model/Tags.h"
 #include <nlohmann/json.hpp>
 #include <cpr/cpr.h>
+#include <utility>
 #include "config/Config.h"
 
 class UpService {
@@ -34,7 +36,7 @@ private:
 
     // Member vars
     std::set<std::string> ignore; // descriptions to ignore
-    std::map<std::string, std::string> tag; // description to tag TODO: make tag enum
+    std::map<std::string, std::pair<Tag, float>> tag; // description to tag/price
 
     // CONSTANTS
     cpr::Parameter PAGE_SIZE = cpr::Parameter{"page[size]", "100"};

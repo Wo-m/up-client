@@ -8,7 +8,6 @@
 
 ## Tags
 - tag transactions
-    - expected (rent, mymc, gym, etc)
     - logging stats to totals for expected and not expected
 
 ## dates
@@ -22,6 +21,7 @@
 - api key
 
 ## other
+- convert all floats to ints where $1 = 100
 - organise files (data.csv, stats.json, ignore.csv)
 ### Goals
 - clean up filewriter.cpp and main.cpp

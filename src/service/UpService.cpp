@@ -13,6 +13,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 #include <cpr/curl_container.h>
 #include <iostream>
@@ -25,6 +26,7 @@ using namespace cpr;
 using namespace nlohmann;
 
 UpService::UpService() {
+    // TODO: Move to DataManager static
     // build ignore set
     std::ifstream ignore_csv;
     ignore_csv.open("ignore.csv");
@@ -38,6 +40,15 @@ UpService::UpService() {
             ignore.insert(line);
         } catch (exception e) {
             //eof
+        }
+    }
+
+    // build tag map
+    std::ifstream stream("tag.json");
+    auto tag_json = nlohmann::json::parse(stream);
+    for (auto t : tag_json.items()) {
+        for (auto entry : t.value()) {
+            tag[entry["desc"]] = make_pair(tag_from_string(t.key()), stof((string) entry["amount"]));
         }
     }
 }
