@@ -28,6 +28,7 @@ private:
     nlohmann::json post(const std::string& path, const std::string& body);
     static std::string convertToRFC3339(const std::string& inputDate);
     bool skipTransaction(std::string description);
+    Tag map_tag(std::string desc, std::string amount);
 
     // Static Helper Methods
     static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", date};}
@@ -36,7 +37,7 @@ private:
 
     // Member vars
     std::set<std::string> ignore; // descriptions to ignore
-    std::map<std::string, std::pair<Tag, float>> tag; // description to tag/price
+    std::map<std::string, std::pair<Tag, std::string>> tag; // description to tag/price
 
     // CONSTANTS
     cpr::Parameter PAGE_SIZE = cpr::Parameter{"page[size]", "100"};

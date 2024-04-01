@@ -3,7 +3,6 @@
 //
 
 #include "service/UpService.h"
-#include "model/Transaction.h"
 #include <cpr/parameters.h>
 #include <cstdio>
 #include <exception>
@@ -32,8 +31,6 @@ UpService::UpService() {
     ignore_csv.open("ignore.csv");
 
     std::string line;
-    std::set<std::string> ignore;
-
     while (!ignore_csv.eof()) {
         getline(ignore_csv, line);
         try {
@@ -48,7 +45,7 @@ UpService::UpService() {
     auto tag_json = nlohmann::json::parse(stream);
     for (auto t : tag_json.items()) {
         for (auto entry : t.value()) {
-            tag[entry["desc"]] = make_pair(tag_from_string(t.key()), stof((string) entry["amount"]));
+            tag[entry["desc"]] = make_pair(tag_from_string(t.key()), entry["amount"]);
         }
     }
 }
@@ -71,6 +68,7 @@ vector<Transaction> UpService::find_new_transactions() {
     string last_date = getLastTransactionDate();
     return getTransactions(account.id, last_date);
 }
+
 // TODO this really should be here given
 // its not going to the api
 std::vector<Transaction> UpService::find_transactions(const std::string &since) {
@@ -201,6 +199,7 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
                         transaction["relationships"]["category"]["data"] == nullptr ? "null"
                                                                                     : transaction["relationships"]["category"]["data"]["id"],
                         transaction["attributes"]["createdAt"],
+                        map_tag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"])
                 });
     };
     return transactions;
@@ -221,6 +220,23 @@ std::string UpService::convertToRFC3339(const std::string& date) {
     auto end_of_day = "23:59:59.99";
 
     return fmt::format("{}-{}-{}T{}Z", "20"+year, month, day, start_of_day);
+}
+
+Tag UpService::map_tag(std::string desc, std::string amount) {
+    std::pair<Tag, std::string> pair;
+    try {
+        pair = tag.at(desc);
+    } catch (exception e) {
+        return NONE;
+    }
+
+    if (pair.second == "0") 
+        return pair.first;
+    
+    if (pair.second == amount)
+        return pair.first;
+
+    return NONE;
 }
 
 /**
