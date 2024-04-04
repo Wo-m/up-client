@@ -6,10 +6,6 @@
     - load new transactions
     - add transactions
 
-## Tags
-- adhoc function to apply tags to all existing transactions
-- logging stats to totals for expected and not expected
-
 ## dates
 - make personal date class that functions how i want it to
 - use date::year_month_day as default date rather than using strings
