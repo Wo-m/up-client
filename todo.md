@@ -7,8 +7,8 @@
     - add transactions
 
 ## Tags
-- tag transactions
-    - logging stats to totals for expected and not expected
+- adhoc function to apply tags to all existing transactions
+- logging stats to totals for expected and not expected
 
 ## dates
 - make personal date class that functions how i want it to
@@ -23,5 +23,8 @@
 ## other
 - convert all floats to ints where $1 = 100
 - organise files (data.csv, stats.json, ignore.csv)
+- convert categories and subs to enums
+- store data more effeciently (i.e enum ints vs string representation)
+
 ### Goals
 - clean up filewriter.cpp and main.cpp

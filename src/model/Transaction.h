@@ -28,7 +28,7 @@ struct Transaction {
     }
 
     std::string summary() const {
-        return fmt::format("amount: {:.2f} description: {} category: {} subCategory: {} createdAt: {} tag {}",
+        return fmt::format("amount: {:.2f} description: {} category: {} subCategory: {} createdAt: {} tag: {}",
                            amount,
                            description,
                            category,
