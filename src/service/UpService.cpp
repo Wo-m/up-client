@@ -51,7 +51,7 @@ UpService::UpService() {
 }
 
 std::string getLastTransactionDate() {
-    ifstream last_date("stats.json");
+    ifstream last_date("info.json");
     auto stats = nlohmann::json::parse(last_date);
     return stats["last_date"];
 }
@@ -71,7 +71,7 @@ vector<Transaction> UpService::find_new_transactions() {
 
 // TODO this really should be here given
 // its not going to the api
-std::vector<Transaction> UpService::find_transactions(const std::string &since) {
+std::vector<Transaction> UpService::find_transactions(const std::string &since, bool print) {
     auto since_rfc = convertToRFC3339(since);
 
     std::ifstream csv;
@@ -88,7 +88,7 @@ std::vector<Transaction> UpService::find_transactions(const std::string &since) 
             break;
         }
         if (t.createdAt < since_rfc) continue;
-        fmt::print("{}\n", t.summary());
+        if (print) fmt::print("{}\n", t.summary());
         transactions.push_back(t);
     }
     return transactions;

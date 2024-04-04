@@ -18,6 +18,8 @@ using namespace std;
 Config config;
 UpService upService;
 
+const string BEGIN = "14/02/24";
+
 string get_input(std::string question) {
     fmt::print("{}\n", question);
     string input;
@@ -27,16 +29,19 @@ string get_input(std::string question) {
 
 void update_transactions() {
     auto transactions = upService.find_new_transactions();
-    if (transactions.empty())
+    if (transactions.empty()) {
+        cout << "no transactions\n";
         return;
+    }
 
     DataManager::correct_nulls(transactions);
-    Stats current = DataManager::write(transactions);
+    DataManager::write(transactions);
     auto new_stats = DataManager::calculate_stats(transactions);
+    auto overall = DataManager::calculate_stats(upService.find_transactions(BEGIN, false)); 
 
-    fmt::print("Statistics for new transactions:\n{}\n Overall:\n{}\n",
+    fmt::print("\nStatistics for new transactions:\n{}\nOverall:\n{}\n",
                new_stats.summary(),
-               current.summary());
+               overall.summary());
 }
 
 // DATE FUNCTOINS ------------
@@ -77,14 +82,15 @@ void stats_menu() {
     string date;
     switch (stoi(choice)) {
         case 1:
-            stats = DataManager::get_current_stats();
+            transactions = upService.find_transactions(BEGIN);
+            stats = DataManager::calculate_stats(transactions);
             break;
         case 2:
-            transactions = upService.find_transactions(get_last_monday()); // TODO: need to convert this string somehow
+            transactions = upService.find_transactions(get_last_monday());
             stats = DataManager::calculate_stats(transactions);
             break;
         case 3:
-            transactions = upService.find_transactions(get_last_pay()); // TODO: need to convert this string somehow
+            transactions = upService.find_transactions(get_last_pay());
             stats = DataManager::calculate_stats(transactions);
             break;
         case 4:
@@ -103,10 +109,9 @@ int main() {
     // Menu
     string input;
     while (1) {
-        fmt::print("{}\n{}\n{}\n{}\n",
+        fmt::print("{}\n{}\n{}\n",
                    "1: find new transactions",
                    "2: stats",
-                   "3: recalc stats",
                    "0: quit");
         cin >> input;
 
@@ -118,9 +123,6 @@ int main() {
                 break;
             case 2:
                 stats_menu();
-                break;
-            case 3:
-                DataManager::recalculate_stats();
                 break;
             default:
                 fmt::print("not an option, try again\n");

@@ -14,12 +14,14 @@
 DataManager::DataManager() {
 }
 
-void write_stats(Stats stats) {
-    std::string json = nlohmann::to_string(stats.to_json());
+void update_info(std::string date) {
+    auto json = nlohmann::json();
+    json["last_date"] = date;
     std::ofstream file;
-    file.open("stats.json");
+    file.open("info.json");
     file << json;
     file.close();
+
 }
 
 Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
@@ -47,32 +49,6 @@ Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
     };
 }
 
-/**
-* handles manual csv edits
-*/
-void DataManager::recalculate_stats() {
-    std::ifstream csv;
-    csv.open("data.csv");
-    std::string line;
-
-    auto transactions = std::vector<Transaction>();
-    while(!csv.eof()) {
-        getline(csv, line);
-        try {
-            transactions.push_back(Transaction::csv_line_to_transaction(line));
-        } catch (std::exception e) {
-            // eof
-        }
-    }
-    auto stats = calculate_stats(transactions);
-    write_stats(stats);
-}
-
-Stats DataManager::get_current_stats() {
-    std::ifstream stream("stats.json");
-    auto stats_json = nlohmann::json::parse(stream);
-    return Stats::from_json(stats_json);
-}
 
 nlohmann::json getCategories() {
     std::ifstream ifs("categories.json");
@@ -113,7 +89,7 @@ void DataManager::correct_nulls(std::vector<Transaction>& transactions) {
     }
 }
 
-Stats DataManager::write(std::vector<Transaction> transactions) {
+void DataManager::write(std::vector<Transaction> transactions) {
     std::ofstream csv;
     csv.open("data.csv", std::ios_base::app);
 
@@ -126,9 +102,5 @@ Stats DataManager::write(std::vector<Transaction> transactions) {
     }
     csv.close();
 
-    Stats current = get_current_stats();
-    current.add(calculate_stats(transactions));
-
-    write_stats(current);
-    return current;
+    update_info(transactions.back().createdAt);
 }
