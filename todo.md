@@ -21,6 +21,7 @@
 - api key
 
 ## other
+- store categories data on boot (currently gets built)
 - convert all floats to ints where $1 = 100
 - organise files (data.csv, stats.json, ignore.csv)
 - convert categories and subs to enums

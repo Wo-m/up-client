@@ -1,4 +1,5 @@
 #include "service/DataManager.h"
+#include "model/Tags.h"
 #include "model/Transaction.h"
 #include <exception>
 #include <fstream>
@@ -24,19 +25,25 @@ void write_stats(Stats stats) {
 Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
     float income = 0;
     float expense = 0;
+    auto tag_to_amount = std::map<Tag, float>();
     for (auto& t : transactions) {
         if (t.category == "income") {
             income += t.amount;
         } else {
             expense += t.amount;
         }
+        auto tag = t.tag;
+        if (tag == NONE) continue;
+
+        tag_to_amount[tag] += t.amount;
     }
 
     return {
         income,
         expense,
         income + expense,
-        transactions.at(transactions.size() - 1).createdAt
+        transactions.at(transactions.size() - 1).createdAt,
+        tag_to_amount
     };
 }
 
