@@ -236,6 +236,10 @@ Tag UpService::map_tag(std::string desc, std::string amount) {
     if (pair.second == amount)
         return pair.first;
 
+    if (stoi(amount) > Config::big_amount) {
+        return BIG;
+    }
+
     return NONE;
 }
 
