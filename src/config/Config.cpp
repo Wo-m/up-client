@@ -13,7 +13,7 @@ int Config::pay_date;
 Config::Config() {
     // static constructor
     if (loaded) return;
-    auto config_ = toml::parse("/Users/dominicthompson/git/up-client/src/config/config.toml");
+    auto config_ = toml::parse("/home/wom/git/up-client/src/config/config.toml");
 
     // Load all values
     up_api_key = toml::find<string>(config_, "up_api_key");
