@@ -2,6 +2,7 @@
 #include "config/Config.h"
 #include <date/date.h>
 #include <fmt/core.h>
+#include <iostream>
 
 using namespace std;
 
@@ -32,7 +33,7 @@ public:
     }
 
     static date::year_month_day get_today() {
-        auto todays_date = date::floor<date::days>(std::chrono::system_clock::now());
+        auto todays_date = date::ceil<date::days>(std::chrono::system_clock::now());
         return todays_date;
     }
 
@@ -47,5 +48,9 @@ public:
         auto hms = eod ? end_of_day : start_of_day;
 
         return fmt::format("{}-{}-{}T{}+10:00", "20"+year, month, day, hms);
+    }
+    
+    static std::string yy_mm_dd(date::year_month_day date) {
+        return date::format("%y/%m/%d", date);
     }
 };

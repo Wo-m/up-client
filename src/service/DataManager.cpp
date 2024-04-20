@@ -54,14 +54,14 @@ Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
 }
 
 void DataManager::snapshot(int choice, bool show_transactions) {
-    std::vector<std::string> dates;
+    std::vector<date::year_month_day> dates;
     switch (choice) {
         case 1:
             {
                 auto last_mon = DateHelper::get_last_monday();
                 auto last_mon_s = date::format("%y/%m/%d", last_mon);
                 while (last_mon_s >= Config::begin) {
-                    dates.insert(dates.begin(), last_mon_s);
+                    dates.insert(dates.begin(), last_mon);
                     last_mon = date::year_month_day{date::sys_days(last_mon) - date::weeks(1)};
                     last_mon_s = date::format("%y/%m/%d", last_mon);
                 }
@@ -72,7 +72,7 @@ void DataManager::snapshot(int choice, bool show_transactions) {
                 auto last_pay = DateHelper::get_last_pay();
                 auto last_pay_s = date::format("%y/%m/%d", last_pay);
                 while (last_pay_s >= Config::begin) {
-                    dates.insert(dates.begin(), last_pay_s);
+                    dates.insert(dates.begin(), last_pay);
                     last_pay = last_pay - date::months(1);
                     last_pay_s = date::format("%y/%m/%d", last_pay);
                 }
@@ -81,14 +81,18 @@ void DataManager::snapshot(int choice, bool show_transactions) {
 
     std::vector<Transaction> transactions;
     Stats stats;
-    auto today =  date::format("%y/%m/%d", date::sys_days{DateHelper::get_today()} + date::days(1));
+    auto today =  date::format("%y/%m/%d", date::sys_days{DateHelper::get_today()});
     for (int i = 1; i <= dates.size(); i++) {
-        if (i == dates.size())
-            transactions = find_transactions(dates.at(i-1), today, show_transactions);
-        else
-            transactions = find_transactions(dates.at(i-1), dates.at(i), show_transactions);
+        auto since = DateHelper::yy_mm_dd(dates.at(i-1));
+        if (i == dates.size()) {
+            transactions = find_transactions(since, today, show_transactions);
+        }
+        else {
+            auto to = DateHelper::yy_mm_dd(date::year_month_day{ date::sys_days(dates.at(i)) - date::days(1) });
+            transactions = find_transactions(since, to, show_transactions);
+        }
         stats = calculate_stats(transactions);
-        fmt::print("----- start: {} -------\n{}-----------------------------\n", dates.at(i-1), stats.summary());
+        fmt::print("----- start: {} -------\n{}-----------------------------\n", since, stats.summary());
     }
 
 
@@ -187,9 +191,9 @@ void DataManager::write(std::vector<Transaction> transactions) {
     update_info(transactions.back().createdAt);
 }
 
-std::vector<Transaction> DataManager::find_transactions(std::string &since, std::string &to, bool print) {
+std::vector<Transaction> DataManager::find_transactions(const std::string &since, const std::string &to, bool print) {
     auto since_rfc = DateHelper::convertToRFC3339(since);
-    auto to_rfc = DateHelper::convertToRFC3339(to);
+    auto to_rfc = DateHelper::convertToRFC3339(to, true);
 
     std::ifstream csv;
     csv.open("info/data.csv");
