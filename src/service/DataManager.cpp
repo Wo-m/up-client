@@ -57,14 +57,26 @@ void DataManager::snapshot(int choice, bool show_transactions) {
     std::vector<std::string> dates;
     switch (choice) {
         case 1:
-            auto last_mon = DateHelper::get_last_monday();
-            auto last_mon_s = date::format("%y/%m/%d", last_mon);
-            while (last_mon_s >= Config::begin) {
-                dates.insert(dates.begin(), last_mon_s);
-                last_mon = date::year_month_day{date::sys_days(last_mon) - date::weeks(1)};
-                last_mon_s = date::format("%y/%m/%d", last_mon);
+            {
+                auto last_mon = DateHelper::get_last_monday();
+                auto last_mon_s = date::format("%y/%m/%d", last_mon);
+                while (last_mon_s >= Config::begin) {
+                    dates.insert(dates.begin(), last_mon_s);
+                    last_mon = date::year_month_day{date::sys_days(last_mon) - date::weeks(1)};
+                    last_mon_s = date::format("%y/%m/%d", last_mon);
+                }
+                break;
             }
-
+        case 2:
+            {
+                auto last_pay = DateHelper::get_last_pay();
+                auto last_pay_s = date::format("%y/%m/%d", last_pay);
+                while (last_pay_s >= Config::begin) {
+                    dates.insert(dates.begin(), last_pay_s);
+                    last_pay = last_pay - date::months(1);
+                    last_pay_s = date::format("%y/%m/%d", last_pay);
+                }
+            }
     }
 
     std::vector<Transaction> transactions;
