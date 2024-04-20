@@ -1,3 +1,4 @@
+#pragma once
 #include "model/Tags.h"
 #include <fmt/core.h>
 #include <fmt/format.h>

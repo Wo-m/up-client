@@ -1,4 +1,4 @@
-
+#pragma once
 
 #include "model/Transaction.h"
 #include "model/Stats.h"
