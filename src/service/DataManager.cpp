@@ -65,7 +65,7 @@ void DataManager::calculate_saved(std::vector<Account> accounts) {
 
     anz += stats.income + stats.expense - up;
 
-    fmt::print("anz/savings {:.2f} | up {:.2f} | income {:.2f} | expense {:.2f}\n", anz, up, stats.income, stats.expense);
+    fmt::print("anz/savings {:.2f} | up {:.2f} | income {:.2f} | expense {:.2f}\n\n", anz, up, stats.income, stats.expense);
 }
 
 void DataManager::snapshot(int choice, bool show_transactions) {
@@ -209,7 +209,6 @@ void DataManager::write(std::vector<Transaction> transactions) {
 std::vector<Transaction> DataManager::find_transactions(const std::string &since, const std::string &to, bool print) {
     auto since_rfc = DateHelper::convertToRFC3339(since);
     auto to_rfc = DateHelper::convertToRFC3339(to, true);
-    std::cout << to_rfc << endl;
 
     std::ifstream csv;
     csv.open("info/data.csv");

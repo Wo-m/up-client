@@ -22,8 +22,8 @@ public:
         while (1) {
             fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n",
                        "1: find new transactions",
-                       "2: stats",
-                       "3: add new transactions",
+                       "2: add new transactions",
+                       "3: stats",
                        "4: snapshots",
                        "5: savings",
                        "0: quit");
@@ -36,10 +36,10 @@ public:
                     find_new_transactions();
                     break;
                 case 2:
-                    stats_menu();
+                    add_new_transaction();
                     break;
                 case 3:
-                    add_new_transaction();
+                    stats_menu();
                     break;
                 case 4:
                     snapshot_menu();
