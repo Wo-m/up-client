@@ -3,6 +3,7 @@
 //
 
 #include "service/UpService.h"
+#include "service/DateHelper.h"
 #include <cpr/parameters.h>
 #include <cstdio>
 #include <exception>
@@ -72,7 +73,7 @@ vector<Transaction> UpService::find_new_transactions() {
 // TODO this really should be here given
 // its not going to the api
 std::vector<Transaction> UpService::find_transactions(const std::string &since, bool print) {
-    auto since_rfc = convertToRFC3339(since);
+    auto since_rfc = DateHelper::convertToRFC3339(since);
 
     std::ifstream csv;
     csv.open("data.csv");
@@ -207,19 +208,6 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
 
 bool UpService::skipTransaction(std::string description) {
     return ignore.find(description) != ignore.end();
-}
-
-std::string UpService::convertToRFC3339(const std::string& date) {
-    std::string day = date.substr(0, 2);
-    std::string month = date.substr(3, 2);
-    std::string year = date.substr(6, 2);
-
-    // TODO move these to constants
-    //      handle choice as params
-    auto start_of_day = "00:00:00.00";
-    auto end_of_day = "23:59:59.99";
-
-    return fmt::format("{}-{}-{}T{}Z", "20"+year, month, day, start_of_day);
 }
 
 Tag UpService::map_tag(std::string desc, std::string amount) {

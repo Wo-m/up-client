@@ -3,6 +3,7 @@
 #include <string>
 #include <fmt/core.h>
 #include <iostream>
+#include "service/DateHelper.h"
 #include "service/UpService.h"
 #include "service/DataManager.h"
 #include <date/date.h>
@@ -15,7 +16,6 @@ class Menu {
 public:
 
     void main() {
-        cout << Config::up_api_key << endl;
         string input;
         while (1) {
             fmt::print("{}\n{}\n{}\n",
@@ -54,7 +54,6 @@ private:
     void find_new_transactions() {
         auto transactions = upService.find_new_transactions();
         if (transactions.empty()) {
-            cout << "no transactions\n";
             return;
         }
 
@@ -66,33 +65,6 @@ private:
         fmt::print("\nStatistics for new transactions:\n{}\nOverall:\n{}\n",
                    new_stats.summary(),
                    overall.summary());
-    }
-
-    // DATE FUNCTOINS ------------
-    // TODO move to data helper.cc
-    // with rfc converter
-    std::string get_last_monday() {
-        auto todays_date = date::floor<date::days>(std::chrono::system_clock::now());
-        auto monday = todays_date - (date::weekday{todays_date} - date::Monday);
-        return date::format("%d/%m/%y", monday);
-    }
-
-    std::string get_last_pay() {
-        int pay_date = Config::pay_date;
-        auto todays_date = date::floor<date::days>(std::chrono::system_clock::now());
-        auto todays_date_ymd = date::year_month_day(todays_date);
-        date::year_month_day last_pay;
-
-        if (todays_date_ymd.day() >= date::day(pay_date)) {
-            auto diff = todays_date_ymd.day() - date::day(pay_date);
-            last_pay = todays_date - diff;
-        } else {
-            auto diff = date::day(pay_date) - todays_date_ymd.day();
-            auto last_month = todays_date_ymd - date::months(1);
-            last_pay = date::sys_days{last_month} + diff;
-        }
-
-        return date::format("%d/%m/%y", date::year_month_day{last_pay});
     }
 
     void stats_menu() {
@@ -112,11 +84,11 @@ private:
                 stats = DataManager::calculate_stats(transactions);
                 break;
             case 2:
-                transactions = upService.find_transactions(get_last_monday());
+                transactions = upService.find_transactions(DateHelper::get_last_monday());
                 stats = DataManager::calculate_stats(transactions);
                 break;
             case 3:
-                transactions = upService.find_transactions(get_last_pay());
+                transactions = upService.find_transactions(DateHelper::get_last_pay());
                 stats = DataManager::calculate_stats(transactions);
                 break;
             case 4:
