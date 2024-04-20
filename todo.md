@@ -1,4 +1,9 @@
 ### TODO
+
+## important:
+put tags, ignore, cats, data in some location that can be accessed from any machine
+a repo potentially, but not this repo
+
 ## transactions
 - handle adding new transactions (for rent and stuff)
 - menu
@@ -6,15 +11,15 @@
     - load new transactions
     - add transactions
 
-## dates
-- make personal date class that functions how i want it to
-- use date::year_month_day as default date rather than using strings
-- rn year_month_day is converted to string, need it to be other way round
-
 ## setup
 - readme
 - vcpkg, tags, ignore
 - api key
+
+## dates
+- make personal date class that functions how i want it to
+- use date::year_month_day as default date rather than using strings
+- rn year_month_day is converted to string, need it to be other way round
 
 ## other
 - store categories data on boot (currently gets built)
