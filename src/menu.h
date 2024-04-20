@@ -20,10 +20,11 @@ public:
     void main() {
         string input;
         while (1) {
-            fmt::print("{}\n{}\n{}\n{}\n",
+            fmt::print("{}\n{}\n{}\n{}\n{}\n",
                        "1: find new transactions",
                        "2: stats",
                        "3: add new transactions",
+                       "4: snapshots",
                        "0: quit");
             cin >> input;
 
@@ -38,6 +39,9 @@ public:
                     break;
                 case 3:
                     add_new_transaction();
+                    break;
+                case 4:
+                    snapshot_menu();
                     break;
                 default:
                     fmt::print("not an option, try again\n");
@@ -92,6 +96,20 @@ private:
                    overall.summary());
     }
 
+    void snapshot_menu() {
+        string choice = get_input(
+            fmt::format("please pick an option:\n{}\n{}\n",
+                    "1: weekly",
+                    "2: pay cycle",
+                    "0: back"));
+        string show = get_input(
+            fmt::format("show transactions?:\n{}\n{}\n",
+                    "0: no",
+                    "1: yes"));
+
+        DataManager::snapshot(stoi(choice), stoi(show));
+    }
+
     void stats_menu() {
         string choice = get_input(
             fmt::format("please pick an option:\n{}\n{}\n{}\n{}\n",
@@ -100,28 +118,23 @@ private:
                     "3: last pay",
                     "4: specific"));
 
-        Stats stats;
-        vector<Transaction> transactions;
         string date;
         switch (stoi(choice)) {
             case 1:
-                transactions = upService.find_transactions(BEGIN);
-                stats = DataManager::calculate_stats(transactions);
+                date = BEGIN;
                 break;
             case 2:
-                transactions = upService.find_transactions(DateHelper::get_last_monday());
-                stats = DataManager::calculate_stats(transactions);
+                date = date::format("%y/%m/%d", DateHelper::get_last_monday());
                 break;
             case 3:
-                transactions = upService.find_transactions(DateHelper::get_last_pay());
-                stats = DataManager::calculate_stats(transactions);
+                date = date::format("%y/%m/%d", DateHelper::get_last_pay());
                 break;
             case 4:
-                auto since = get_input("please enter a date (dd/mm/yy)");
-                transactions = upService.find_transactions(since);
-                stats = DataManager::calculate_stats(transactions);
+                date = get_input("please enter a date (yy/mm/dd)");
                 break;
         }
+        auto transactions = upService.find_transactions(date);
+        auto stats = DataManager::calculate_stats(transactions);
 
         fmt::print("{}\n", stats.summary());
     }

@@ -11,4 +11,6 @@ public:
     static void correct_nulls(std::vector<Transaction>& transactions);
     static int correct_nulls(Transaction&);
     static void add_new_transaction(Transaction&);
+    static void snapshot(int choice, bool);
+    static std::vector<Transaction> find_transactions(std::string&, std::string&, bool);
 };

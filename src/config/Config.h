@@ -13,5 +13,6 @@ public:
     static std::string up_api_key;
     static int pay_date;
     static int big_amount; // amount to be classified as BIG transaction
+    static std::string begin;
     Config();
 };
