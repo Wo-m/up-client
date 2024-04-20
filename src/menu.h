@@ -20,11 +20,12 @@ public:
     void main() {
         string input;
         while (1) {
-            fmt::print("{}\n{}\n{}\n{}\n{}\n",
+            fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n",
                        "1: find new transactions",
                        "2: stats",
                        "3: add new transactions",
                        "4: snapshots",
+                       "5: savings",
                        "0: quit");
             cin >> input;
 
@@ -42,6 +43,9 @@ public:
                     break;
                 case 4:
                     snapshot_menu();
+                    break;
+                case 5:
+                    savings();
                     break;
                 default:
                     fmt::print("not an option, try again\n");
@@ -78,6 +82,11 @@ private:
 
         DataManager::correct_nulls(transaction);
         DataManager::add_new_transaction(transaction);
+    }
+
+    void savings() {
+        auto accounts = upService.get_accounts();
+        DataManager::calculate_saved(accounts);
     }
 
     void find_new_transactions() {

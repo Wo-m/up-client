@@ -53,6 +53,21 @@ Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
     };
 }
 
+void DataManager::calculate_saved(std::vector<Account> accounts) {
+    float up = 0;
+    float anz = Config::start_balance;
+
+    for (auto& a : accounts) {
+        up += a.balance;
+    }
+
+    auto stats = calculate_stats(find_transactions(Config::begin, DateHelper::yy_mm_dd(DateHelper::get_today()), false));
+
+    anz += stats.income + stats.expense - up;
+
+    fmt::print("anz/savings {:.2f} | up {:.2f} | income {:.2f} | expense {:.2f}\n", anz, up, stats.income, stats.expense);
+}
+
 void DataManager::snapshot(int choice, bool show_transactions) {
     std::vector<date::year_month_day> dates;
     switch (choice) {
@@ -194,6 +209,7 @@ void DataManager::write(std::vector<Transaction> transactions) {
 std::vector<Transaction> DataManager::find_transactions(const std::string &since, const std::string &to, bool print) {
     auto since_rfc = DateHelper::convertToRFC3339(since);
     auto to_rfc = DateHelper::convertToRFC3339(to, true);
+    std::cout << to_rfc << endl;
 
     std::ifstream csv;
     csv.open("info/data.csv");
