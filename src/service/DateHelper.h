@@ -38,9 +38,9 @@ public:
 
         // TODO move these to constants
         //      handle choice as params
-        auto start_of_day = "00:00:00.00";
+        auto start_of_day = "00:00:00";
         auto end_of_day = "23:59:59.99";
 
-        return fmt::format("{}-{}-{}T{}Z", "20"+year, month, day, start_of_day);
+        return fmt::format("{}-{}-{}T{}+10:00", "20"+year, month, day, start_of_day);
     }
 };

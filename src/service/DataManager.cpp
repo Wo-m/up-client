@@ -56,7 +56,6 @@ nlohmann::json getCategories() {
 }
 
 void DataManager::correct_nulls(std::vector<Transaction>& transactions) {
-    nlohmann::json categories = getCategories();
     auto it = transactions.begin();
     while (it != transactions.end()) {
         auto& transaction = it;
@@ -64,29 +63,67 @@ void DataManager::correct_nulls(std::vector<Transaction>& transactions) {
             it++;
             continue;
         }
-
-        fmt::print("Please add category and sub-category for the following entry:\n");
-        fmt::print("{}\n", transaction->summary());
-        
-        // TODO: store this
-        for (int i = 0; i < categories.size(); i++) {
-            std::string cat = categories.at(i).at(1);
-            std::string sub_cat = categories.at(i).at(0);
-            fmt::print("{}: {} - {}\n", i, sub_cat, cat);
-        }
-        fmt::print("-1: delete\n");
-
-        std::string choice;
-        std::cin >> choice;
-        int index = stoi(choice);
-        if (index == -1) {
+        auto choice = correct_nulls(*it);
+        if (choice == -1)
             it = transactions.erase(it);
-            continue;
-        }
-        transaction->category = std::string(categories.at(index).at(1));
-        transaction->subCategory = std::string(categories.at(index).at(0));
         it++;
     }
+}
+
+int DataManager::correct_nulls(Transaction& transaction) {
+
+    nlohmann::json categories = getCategories();
+    fmt::print("Please add category and sub-category for the following entry:\n");
+    fmt::print("{}\n", transaction.summary());
+    
+    // TODO: store this
+    for (int i = 0; i < categories.size(); i++) {
+        std::string cat = categories.at(i).at(1);
+        std::string sub_cat = categories.at(i).at(0);
+        fmt::print("{}: {} - {}\n", i, sub_cat, cat);
+    }
+    fmt::print("-1: delete\n");
+
+    std::string choice;
+    std::cin >> choice;
+    int index = stoi(choice);
+    if (index == -1) {
+        return -1;
+    }
+    transaction.category = std::string(categories.at(index).at(1));
+    transaction.subCategory = std::string(categories.at(index).at(0));
+    return 0;
+}
+
+void DataManager::add_new_transaction(Transaction& transaction) {
+    auto csv_line = transaction.csv_entry();
+
+    std::ifstream inputFile("info/data.csv");
+    std::ofstream tempFile("temp.csv");
+
+    std::string line;
+    bool done = false;
+    while (getline(inputFile, line)) {
+        auto t = Transaction::csv_line_to_transaction(line);
+
+        if (!done && (transaction.createdAt < t.createdAt)) {
+            // Add your new line after this line
+            tempFile << csv_line;
+            // Add your new line here
+            tempFile << line << std::endl;
+
+            done = true;
+        } else {
+            tempFile << line << std::endl;
+        }
+    }
+
+    inputFile.close();
+    tempFile.close();
+
+    // Replace the original file with the modified temp file
+    remove("info/data.csv");
+    rename("temp.csv", "info/data.csv");
 }
 
 void DataManager::write(std::vector<Transaction> transactions) {

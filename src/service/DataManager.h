@@ -9,4 +9,6 @@ public:
     static void write(std::vector<Transaction> transactions);
     static Stats calculate_stats(std::vector<Transaction> transactions);
     static void correct_nulls(std::vector<Transaction>& transactions);
+    static int correct_nulls(Transaction&);
+    static void add_new_transaction(Transaction&);
 };

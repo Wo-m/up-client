@@ -88,6 +88,7 @@ std::vector<Transaction> UpService::find_transactions(const std::string &since, 
         } catch (exception e) {
             break;
         }
+
         if (t.createdAt < since_rfc) continue;
         if (print) fmt::print("{}\n", t.summary());
         transactions.push_back(t);

@@ -3,6 +3,8 @@
 #include <string>
 #include <fmt/core.h>
 #include <iostream>
+#include "model/Tags.h"
+#include "model/Transaction.h"
 #include "service/DateHelper.h"
 #include "service/UpService.h"
 #include "service/DataManager.h"
@@ -18,9 +20,10 @@ public:
     void main() {
         string input;
         while (1) {
-            fmt::print("{}\n{}\n{}\n",
+            fmt::print("{}\n{}\n{}\n{}\n",
                        "1: find new transactions",
                        "2: stats",
+                       "3: add new transactions",
                        "0: quit");
             cin >> input;
 
@@ -32,6 +35,9 @@ public:
                     break;
                 case 2:
                     stats_menu();
+                    break;
+                case 3:
+                    add_new_transaction();
                     break;
                 default:
                     fmt::print("not an option, try again\n");
@@ -49,6 +55,25 @@ private:
         string input;
         cin >> input;
         return input;
+    }
+
+    void add_new_transaction() {
+        auto date = get_input("date (dd/mm/yy)");
+        auto amount = get_input("amount");
+        auto description = get_input("description");
+        auto tag = tag_from_string(get_input("tag"));
+
+        Transaction transaction({
+            stof(amount),
+            description,
+            "null",
+            "null",
+            DateHelper::convertToRFC3339(date),
+            tag
+        });
+
+        DataManager::correct_nulls(transaction);
+        DataManager::add_new_transaction(transaction);
     }
 
     void find_new_transactions() {
