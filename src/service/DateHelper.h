@@ -41,8 +41,6 @@ public:
         std::string month = date.substr(3, 2);
         std::string day = date.substr(6, 2);
 
-        // TODO move these to constants
-        //      handle choice as params
         auto start_of_day = "00:00:00";
         auto end_of_day = "23:59:59.99";
 

@@ -20,6 +20,7 @@ public:
     std::vector<Transaction> find_transactions(const std::string &since, bool print = true);
     std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since);
     Account getTransactionalAccount();
+    std::vector<Account> get_accounts();
     void getCategories();
 
 private:

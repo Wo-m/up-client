@@ -125,6 +125,24 @@ vector<Transaction> UpService::getTransactions(const string &accountId, const st
     return transactions;
 }
 
+vector<Account> UpService::get_accounts() {
+    // TODO Cache
+    json data = this->get("accounts", {});
+
+    vector<Account> accounts;
+
+    for (auto& entry : data["data"]) {
+        accounts.push_back({
+            entry["id"],
+            entry["attributes"]["displayName"],
+            stof((string) entry["attributes"]["balance"]["value"]),
+            entry["attributes"]["accountType"] == "TRANSACTIONAL",
+        });
+    }
+
+    return accounts;
+}
+
 /**
  * Get Transactional Account
  * @return

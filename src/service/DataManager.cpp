@@ -88,7 +88,7 @@ void DataManager::snapshot(int choice, bool show_transactions) {
         else
             transactions = find_transactions(dates.at(i-1), dates.at(i), show_transactions);
         stats = calculate_stats(transactions);
-        fmt::print("-----start: {} -------\n{}---------------------------\n", dates.at(i-1), stats.summary());
+        fmt::print("----- start: {} -------\n{}-----------------------------\n", dates.at(i-1), stats.summary());
     }
 
 

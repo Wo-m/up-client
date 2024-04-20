@@ -14,5 +14,6 @@ public:
     static int pay_date;
     static int big_amount; // amount to be classified as BIG transaction
     static std::string begin;
+    static float start_balance; // balance before use
     Config();
 };
