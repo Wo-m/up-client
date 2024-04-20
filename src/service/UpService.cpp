@@ -29,7 +29,7 @@ UpService::UpService() {
     // TODO: Move to DataManager static
     // build ignore set
     std::ifstream ignore_csv;
-    ignore_csv.open("ignore.csv");
+    ignore_csv.open("info/ignore.csv");
 
     std::string line;
     while (!ignore_csv.eof()) {
@@ -42,7 +42,7 @@ UpService::UpService() {
     }
 
     // build tag map
-    std::ifstream stream("tag.json");
+    std::ifstream stream("info/tag.json");
     auto tag_json = nlohmann::json::parse(stream);
     for (auto t : tag_json.items()) {
         for (auto entry : t.value()) {
@@ -52,7 +52,7 @@ UpService::UpService() {
 }
 
 std::string getLastTransactionDate() {
-    ifstream last_date("info.json");
+    ifstream last_date("info/info.json");
     auto stats = nlohmann::json::parse(last_date);
     return stats["last_date"];
 }
@@ -76,7 +76,7 @@ std::vector<Transaction> UpService::find_transactions(const std::string &since, 
     auto since_rfc = DateHelper::convertToRFC3339(since);
 
     std::ifstream csv;
-    csv.open("data.csv");
+    csv.open("info/data.csv");
     std::string line;
 
     auto transactions = std::vector<Transaction>();
@@ -252,7 +252,7 @@ void UpService::getCategories() {
 
     string json_str = to_string(categories);
     ofstream file;
-    file.open("categories.json");
+    file.open("info/categories.json");
     file << json_str;
     file.close();
 }

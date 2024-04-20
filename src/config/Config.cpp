@@ -14,7 +14,7 @@ int Config::big_amount;
 Config::Config() {
     // static constructor
     if (loaded) return;
-    auto config_ = toml::parse("config.toml");
+    auto config_ = toml::parse("info/config.toml");
 
     // Load all values
     up_api_key = toml::find<string>(config_, "up_api_key");

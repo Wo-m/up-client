@@ -18,7 +18,7 @@ void update_info(std::string date) {
     auto json = nlohmann::json();
     json["last_date"] = date;
     std::ofstream file;
-    file.open("info.json");
+    file.open("info/info.json");
     file << json;
     file.close();
 
@@ -51,7 +51,7 @@ Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
 
 
 nlohmann::json getCategories() {
-    std::ifstream ifs("categories.json");
+    std::ifstream ifs("info/categories.json");
     return nlohmann::json::parse(ifs);
 }
 
@@ -91,7 +91,7 @@ void DataManager::correct_nulls(std::vector<Transaction>& transactions) {
 
 void DataManager::write(std::vector<Transaction> transactions) {
     std::ofstream csv;
-    csv.open("data.csv", std::ios_base::app);
+    csv.open("info/data.csv", std::ios_base::app);
 
     float expense = 0;
     float income = 0;
