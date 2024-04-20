@@ -89,7 +89,8 @@ private:
         DataManager::correct_nulls(transactions);
         DataManager::write(transactions);
         auto new_stats = DataManager::calculate_stats(transactions);
-        auto overall = DataManager::calculate_stats(upService.find_transactions(BEGIN, false)); 
+        auto today = date::format("%y/%m/%d", DateHelper::get_today());
+        auto overall = DataManager::calculate_stats(DataManager::find_transactions(BEGIN, today, false)); 
 
         fmt::print("\nStatistics for new transactions:\n{}\nOverall:\n{}\n",
                    new_stats.summary(),
@@ -133,7 +134,9 @@ private:
                 date = get_input("please enter a date (yy/mm/dd)");
                 break;
         }
-        auto transactions = upService.find_transactions(date);
+
+        auto today = date::format("%y/%m/%d", DateHelper::get_today());
+        auto transactions = DataManager::find_transactions(date, today, true);
         auto stats = DataManager::calculate_stats(transactions);
 
         fmt::print("{}\n", stats.summary());

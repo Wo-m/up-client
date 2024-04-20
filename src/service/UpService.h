@@ -17,7 +17,6 @@ public:
 
     void logTransactions(const std::string& accountId, const std::string& since, const std::string& until);
     std::vector<Transaction> find_new_transactions();
-    std::vector<Transaction> find_transactions(const std::string &since, bool print = true);
     std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since);
     Account getTransactionalAccount();
     std::vector<Account> get_accounts();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "model/Account.h"
 #include "model/Transaction.h"
 #include "model/Stats.h"
 #include <vector>
@@ -12,5 +13,6 @@ public:
     static int correct_nulls(Transaction&);
     static void add_new_transaction(Transaction&);
     static void snapshot(int choice, bool);
-    static std::vector<Transaction> find_transactions(std::string&, std::string&, bool);
+    static std::vector<Transaction> find_transactions(const std::string&, const std::string&, bool);
+    static void calculate_saved(std::vector<Account>);
 };

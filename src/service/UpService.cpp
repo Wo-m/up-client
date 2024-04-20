@@ -70,32 +70,6 @@ vector<Transaction> UpService::find_new_transactions() {
     return getTransactions(account.id, last_date);
 }
 
-// TODO this really should be here given
-// its not going to the api
-std::vector<Transaction> UpService::find_transactions(const std::string &since, bool print) {
-    auto since_rfc = DateHelper::convertToRFC3339(since);
-
-    std::ifstream csv;
-    csv.open("info/data.csv");
-    std::string line;
-
-    auto transactions = std::vector<Transaction>();
-    Transaction t;
-    while(1) {
-        getline(csv, line);
-        try {
-            t = Transaction::csv_line_to_transaction(line);
-        } catch (exception e) {
-            break;
-        }
-
-        if (t.createdAt < since_rfc) continue;
-        if (print) fmt::print("{}\n", t.summary());
-        transactions.push_back(t);
-    }
-    return transactions;
-}
-
 /**
  * Get transactions for account
  * @param accountId
@@ -148,19 +122,11 @@ vector<Account> UpService::get_accounts() {
  * @return
  */
 Account UpService::getTransactionalAccount() {
-    json accountsData = this->get("accounts", Parameters{{"filter[accountType]", "TRANSACTIONAL"}});
-
-    // should only be one account
-    json accountData = accountsData["data"][0];
-
-    Account account =
-    {
-        accountData["id"],
-        accountData["attributes"]["displayName"],
-        stof((string) accountData["attributes"]["balance"]["value"])
-    };
-
-    return account;
+    auto accounts = get_accounts();
+    auto account = std::find_if(accounts.begin(), accounts.end(), [](const Account& a) {
+        return a.transactional;
+    });
+    return *account;
 }
 
 // private ------------------------------
