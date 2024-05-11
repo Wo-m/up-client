@@ -15,5 +15,7 @@
     "name" : "fmt"
   }, {
     "name" : "date"
+  }, {
+    "name" : "drogon"
   } ]
 }

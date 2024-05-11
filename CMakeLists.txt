@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # CMake needs explicit decleration of triplet
 # and build script included
-set(VCPKG_TARGET_TRIPLET x64-linux)
+set(VCPKG_TARGET_TRIPLET arm64-osx)
 include(./vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 # SETUP >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -15,7 +15,8 @@ set(CMAKE_CXX_STANDARD 17)  # C++ Standard
 set(SOURCES                 # All .cpp files in src/
         src/config/Config.cpp 
         src/service/UpService.cpp
-        src/service/DataManager.cpp)
+        src/service/DataManager.cpp
+        src/controller/DataController.cc)
 
 set(LIBRARY_NAME engine)    # Default name for the library built from src/*.cpp (change if you wish)
 
@@ -42,6 +43,9 @@ target_link_libraries(${LIBRARY_NAME} PUBLIC fmt::fmt)
 # dates
 find_package(date CONFIG REQUIRED)
 target_link_libraries(${LIBRARY_NAME} PRIVATE date::date date::date-tz)
+# Drogon (Rest Endpoints)
+find_package(drogon CONFIG REQUIRED)
+target_link_libraries(${LIBRARY_NAME} PRIVATE Drogon::Drogon)
 
 # EXECUTABLE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 add_executable(up-client app/main.cpp)                      # Create executable
