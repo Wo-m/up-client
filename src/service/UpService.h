@@ -27,7 +27,7 @@ private:
     nlohmann::json getPaged(const std::string& path, const cpr::Parameters& params);
     nlohmann::json post(const std::string& path, const std::string& body);
     static std::string convertToRFC3339(const std::string& inputDate);
-    bool skipTransaction(std::string description);
+    bool skipTransaction(const nlohmann::json&);
     Tag map_tag(std::string desc, std::string amount);
 
     // Static Helper Methods

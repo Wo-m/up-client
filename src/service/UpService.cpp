@@ -84,12 +84,14 @@ vector<Transaction> UpService::getTransactions(const string &accountId, const st
     
     json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
 
-    if (transactionsData["data"].empty() || transactionsData["data"].size() == 1) {
-        printf("no new transactions\n");
+    vector<Transaction> transactions = mapTransactions(transactionsData);
+
+    if (transactions.empty() || transactions.size() == 1) {
+        // no new transactions (1 remaining is from last process)
+        // or mapping removed all transactions
+        fmt::print("no new transactions\n");
         return {};
     }
-
-    vector<Transaction> transactions = mapTransactions(transactionsData);
 
 
     // reverse transactions
@@ -173,7 +175,7 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
     vector<Transaction> transactions;
     for (auto &transaction: transactionsData["data"]) {
 
-        if (skipTransaction(transaction["attributes"]["description"]))
+        if (skipTransaction(transaction))
             continue;
 
         transactions.push_back(
@@ -187,8 +189,12 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
     return transactions;
 }
 
-bool UpService::skipTransaction(std::string description) {
-    return ignore.find(description) != ignore.end();
+bool IsInternalTransfer(const json& data) {
+    return !data["relationships"]["transferAccount"]["data"].is_null();
+}
+
+bool UpService::skipTransaction(const json& data) {
+    return ignore.find(data["attributes"]["description"]) != ignore.end() || IsInternalTransfer(data);
 }
 
 Tag UpService::map_tag(std::string desc, std::string amount) {
