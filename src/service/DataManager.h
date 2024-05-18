@@ -9,8 +9,6 @@ public:
     DataManager();
     static void write(std::vector<Transaction> transactions);
     static Stats calculate_stats(std::vector<Transaction> transactions);
-    static void correct_nulls(std::vector<Transaction>& transactions);
-    static int correct_nulls(Transaction&);
     static void add_new_transaction(Transaction&);
     static void snapshot(int choice, bool);
     static std::vector<Transaction> find_transactions(const std::string&, const std::string&, bool);

@@ -77,13 +77,10 @@ private:
         Transaction transaction({
             stof(amount),
             description,
-            "null",
-            "null",
             DateHelper::convertToRFC3339(date),
             tag
         });
 
-        DataManager::correct_nulls(transaction);
         DataManager::add_new_transaction(transaction);
     }
 
@@ -98,7 +95,6 @@ private:
             return;
         }
 
-        DataManager::correct_nulls(transactions);
         DataManager::write(transactions);
         auto new_stats = DataManager::calculate_stats(transactions);
         auto today = date::format("%y/%m/%d", DateHelper::get_today());

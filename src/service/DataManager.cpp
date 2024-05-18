@@ -105,6 +105,7 @@ void DataManager::snapshot(int choice, bool show_transactions) {
             auto to = DateHelper::yy_mm_dd(date::year_month_day{ date::sys_days(dates.at(i)) - date::days(1) });
             transactions = find_transactions(since, to, show_transactions);
         }
+        if (transactions.size() == 0) continue;
         stats = calculate_stats(transactions);
         fmt::print("----- start: {} -------\n{}-----------------------------\n", since, stats.summary());
     }
@@ -116,46 +117,6 @@ void DataManager::snapshot(int choice, bool show_transactions) {
 nlohmann::json getCategories() {
     std::ifstream ifs("info/categories.json");
     return nlohmann::json::parse(ifs);
-}
-
-void DataManager::correct_nulls(std::vector<Transaction>& transactions) {
-    auto it = transactions.begin();
-    while (it != transactions.end()) {
-        auto& transaction = it;
-        if (transaction->category != "null") {
-            it++;
-            continue;
-        }
-        auto choice = correct_nulls(*it);
-        if (choice == -1)
-            it = transactions.erase(it);
-        it++;
-    }
-}
-
-int DataManager::correct_nulls(Transaction& transaction) {
-
-    nlohmann::json categories = getCategories();
-    fmt::print("Please add category and sub-category for the following entry:\n");
-    fmt::print("{}\n", transaction.summary());
-    
-    // TODO: store this
-    for (int i = 0; i < categories.size(); i++) {
-        std::string cat = categories.at(i).at(1);
-        std::string sub_cat = categories.at(i).at(0);
-        fmt::print("{}: {} - {}\n", i, sub_cat, cat);
-    }
-    fmt::print("-1: delete\n");
-
-    std::string choice;
-    std::cin >> choice;
-    int index = stoi(choice);
-    if (index == -1) {
-        return -1;
-    }
-    transaction.category = std::string(categories.at(index).at(1));
-    transaction.subCategory = std::string(categories.at(index).at(0));
-    return 0;
 }
 
 void DataManager::add_new_transaction(Transaction& transaction) {
@@ -238,12 +199,7 @@ void DataManager::AdHoc() {
     bool done = false;
     while (getline(inputFile, line)) {
         auto t = Transaction::csv_line_to_transaction(line);
-        if (t.category ==  "income") {
-            t.tag = INCOME;
-            tempFile << t.csv_entry();
-        } else {
-            tempFile << line << std::endl;
-        }
+        tempFile << t.csv_entry();
     }
 
     inputFile.close();

@@ -180,10 +180,6 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
                 {
                         stof((string) transaction["attributes"]["amount"]["value"]),
                         transaction["attributes"]["description"],
-                        transaction["relationships"]["parentCategory"]["data"] == nullptr ? "null"
-                                                                                    : transaction["relationships"]["parentCategory"]["data"]["id"],
-                        transaction["relationships"]["category"]["data"] == nullptr ? "null"
-                                                                                    : transaction["relationships"]["category"]["data"]["id"],
                         transaction["attributes"]["createdAt"],
                         map_tag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"])
                 });
