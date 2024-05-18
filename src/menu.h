@@ -69,7 +69,7 @@ private:
     }
 
     void add_new_transaction() {
-        auto date = get_input("date (dd/mm/yy)");
+        auto date = get_input("date (yy/mm/dd)");
         auto amount = get_input("amount");
         auto description = get_input("description");
         auto tag = tag_from_string(get_input("tag"));
