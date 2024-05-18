@@ -17,14 +17,15 @@ const string BEGIN = "14/02/24";
 class Menu {
 public:
     void main() {
+        // do this on boot
+        find_new_transactions();
         string input;
         while (1) {
-            fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
-                       "1: find new transactions",
-                       "2: add new transactions",
-                       "3: stats",
-                       "4: snapshots",
-                       "5: savings",
+            fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n",
+                       "1: add new transactions",
+                       "2: stats",
+                       "3: snapshots",
+                       "4: savings",
                        "-1: AdHoc",
                        "0: quit");
             cin >> input;
@@ -36,18 +37,15 @@ public:
                     DataManager::AdHoc();
                     break;
                 case 1:
-                    find_new_transactions();
-                    break;
-                case 2:
                     add_new_transaction();
                     break;
-                case 3:
+                case 2:
                     stats_menu();
                     break;
-                case 4:
+                case 3:
                     snapshot_menu();
                     break;
-                case 5:
+                case 4:
                     savings();
                     break;
                 default:
