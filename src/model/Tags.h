@@ -7,6 +7,7 @@ enum Tag {
     OPAL,
     FLIGHTS,
     BIG,
+    INCOME,
     NONE,
 };
 
@@ -22,6 +23,8 @@ inline std::string to_string(Tag tag) {
             return "FLIGHTS";
         case BIG:
             return "BIG";
+        case INCOME:
+            return "INCOME";
         case NONE:
             return "NONE";
     }
@@ -34,6 +37,7 @@ inline Tag tag_from_string(std::string name) {
     if (name == "OPAL") return OPAL;
     if (name == "FLIGHTS") return FLIGHTS;
     if (name == "BIG") return BIG;
+    if (name == "INCOME") return INCOME;
 
     return NONE;
 }
