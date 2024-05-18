@@ -14,9 +14,10 @@ struct Stats {
     std::map<Tag, float> tag_to_amount;
 
     std::string summary() {
-        std::string tags_summary = "";
+        std::string tags_summary = ""; // expense only
         float tags_total = 0;
         for (auto item: tag_to_amount) {
+            if (item.first == INCOME) continue;
             tags_summary.append(fmt::format("{}: {:.2f} ", to_string(item.first), item.second));
             tags_total += item.second;
         }
