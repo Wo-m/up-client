@@ -24,11 +24,11 @@ struct Transaction {
     }
 
     std::string summary() const {
-        return fmt::format("amount: {:.2f} description: {} createdAt: {} tag: {}",
-                           amount,
-                           description,
-                           createdAt,
-                           to_string(tag)); 
+        return fmt::format("{:<20}{:<40}{:<40}{:<20}",
+                           fmt::format("amount: {:.2f}", amount),
+                           fmt::format("description: {}", description),
+                           fmt::format("createdAt: {}", createdAt),
+                           fmt::format("tag: {}", to_string(tag)));
     }
 
     static Transaction csv_line_to_transaction(std::string line) {
