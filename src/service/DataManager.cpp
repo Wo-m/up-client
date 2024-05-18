@@ -29,19 +29,18 @@ void update_info(std::string date) {
 }
 
 Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
-    float income = 0;
-    float expense = 0;
     auto tag_to_amount = std::map<Tag, float>();
     for (auto& t : transactions) {
-        if (t.category == "income") {
-            income += t.amount;
-        } else {
-            expense += t.amount;
-        }
-        auto tag = t.tag;
-        if (tag == NONE) continue;
+        tag_to_amount[t.tag] += t.amount;
+    }
 
-        tag_to_amount[tag] += t.amount;
+    float income = tag_to_amount[INCOME];
+    float expense = 0;
+
+    for (auto& pair : tag_to_amount){
+        if (pair.first == INCOME) continue;
+
+        expense += pair.second;
     }
 
     return {
@@ -229,4 +228,29 @@ std::vector<Transaction> DataManager::find_transactions(const std::string &since
         transactions.push_back(t);
     }
     return transactions;
+}
+
+void DataManager::AdHoc() {
+    std::ifstream inputFile("info/data.csv");
+    std::ofstream tempFile("temp.csv");
+
+    std::string line;
+    bool done = false;
+    while (getline(inputFile, line)) {
+        auto t = Transaction::csv_line_to_transaction(line);
+        if (t.category ==  "income") {
+            t.tag = INCOME;
+            tempFile << t.csv_entry();
+        } else {
+            tempFile << line << std::endl;
+        }
+    }
+
+    inputFile.close();
+    tempFile.close();
+
+    // Replace the original file with the modified temp file
+    remove("info/data.csv");
+    rename("temp.csv", "info/data.csv");
+
 }

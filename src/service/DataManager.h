@@ -15,4 +15,6 @@ public:
     static void snapshot(int choice, bool);
     static std::vector<Transaction> find_transactions(const std::string&, const std::string&, bool);
     static void calculate_saved(std::vector<Account>);
+
+    static void AdHoc();
 };

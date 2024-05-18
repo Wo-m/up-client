@@ -16,22 +16,25 @@ const string BEGIN = "14/02/24";
 
 class Menu {
 public:
-
     void main() {
         string input;
         while (1) {
-            fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n",
+            fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
                        "1: find new transactions",
                        "2: add new transactions",
                        "3: stats",
                        "4: snapshots",
                        "5: savings",
+                       "-1: AdHoc",
                        "0: quit");
             cin >> input;
 
             switch (stoi(input)) {
                 case 0:
                     return;
+                case -1:
+                    DataManager::AdHoc();
+                    break;
                 case 1:
                     find_new_transactions();
                     break;
