@@ -73,7 +73,7 @@ vector<Transaction> UpService::find_new_transactions() {
 /**
  * Get transactions for account
  * @param accountId
- * @param since
+ * @param since rfc string
  * @param until
  * @return  Config();
  */

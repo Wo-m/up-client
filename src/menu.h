@@ -3,6 +3,7 @@
 #include <string>
 #include <fmt/core.h>
 #include <iostream>
+#include "config/Config.h"
 #include "model/Tags.h"
 #include "model/Transaction.h"
 #include "service/DateHelper.h"
@@ -11,8 +12,6 @@
 #include <date/date.h>
 
 using namespace std;
-
-const string BEGIN = "14/02/24";
 
 class Menu {
 public:
@@ -67,7 +66,7 @@ private:
     }
 
     void add_new_transaction() {
-        auto date = get_input("date (yy/mm/dd)");
+        auto date = DateHelper::to_year_month_day(get_input("date (dd/mm/yy)"));
         auto amount = get_input("amount");
         auto description = get_input("description");
         auto tag = tag_from_string(get_input("tag"));
@@ -95,8 +94,8 @@ private:
 
         DataManager::write(transactions);
         auto new_stats = DataManager::calculate_stats(transactions);
-        auto today = date::format("%y/%m/%d", DateHelper::get_today());
-        auto overall = DataManager::calculate_stats(DataManager::find_transactions(BEGIN, today, false)); 
+        auto today = DateHelper::get_today();
+        auto overall = DataManager::calculate_stats(DataManager::find_transactions(DateHelper::to_year_month_day(Config::begin), today, false));
 
         fmt::print("\nStatistics for new transactions:\n{}\nOverall:\n{}\n",
                    new_stats.summary(),
@@ -125,23 +124,24 @@ private:
                     "3: last pay",
                     "4: specific"));
 
-        string date;
+        fmt::print("here");
+        date::year_month_day date;
         switch (stoi(choice)) {
             case 1:
-                date = BEGIN;
+                date = DateHelper::to_year_month_day(Config::begin);
                 break;
             case 2:
-                date = date::format("%y/%m/%d", DateHelper::get_last_monday());
+                date = DateHelper::get_last_monday();
                 break;
             case 3:
-                date = date::format("%y/%m/%d", DateHelper::get_last_pay());
+                date = DateHelper::get_last_pay();
                 break;
             case 4:
-                date = get_input("please enter a date (yy/mm/dd)");
+                date = DateHelper::to_year_month_day(get_input("please enter a date (dd/mm/yy)"));
                 break;
         }
 
-        auto today = date::format("%y/%m/%d", DateHelper::get_today());
+        auto today = DateHelper::get_today();
         auto transactions = DataManager::find_transactions(date, today, true);
         auto stats = DataManager::calculate_stats(transactions);
 

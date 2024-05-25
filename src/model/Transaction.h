@@ -24,7 +24,7 @@ struct Transaction {
     }
 
     std::string summary() const {
-        return fmt::format("{:<20}{:<40}{:<40}{:<20}",
+        return fmt::format("{:<20}{:<70}{:<40}{:<20}",
                            fmt::format("amount: {:.2f}", amount),
                            fmt::format("description: {}", description),
                            fmt::format("createdAt: {}", createdAt),
