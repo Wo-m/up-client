@@ -21,8 +21,6 @@ struct Stats {
             tags_summary.append(fmt::format("{}: {:.2f} ", to_string(item.first), item.second));
             tags_total += item.second;
         }
-        tags_summary.append(fmt::format("\nexpense - TAGS: {:.2f}", expense - tags_total));
-
         return fmt::format("income: {:.2f} expense: {:.2f} total {:.2f}\n{}\n", income, expense, total, tags_summary);
     }
 };
