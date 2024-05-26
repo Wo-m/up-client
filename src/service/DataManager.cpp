@@ -13,6 +13,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
+#include <sqlite3.h>
 
 
 DataManager::DataManager() {
@@ -188,22 +189,23 @@ std::vector<Transaction> DataManager::find_transactions(const date::year_month_d
     return transactions;
 }
 
+void create_table() {
+    sqlite3* db;
+
+    int rc = sqlite3_open("./info/up-client.db", &db);
+
+    std::string sql = "CREATE TABLE \"Transaction\"("
+                      "created_at text primary key, "
+                      "amount real not null, "
+                      "description text not null, "
+                      "tag text not null);";
+
+    fmt::print("{}\n", sql);
+    char* ptr = 0;
+    rc = sqlite3_exec(db, sql.c_str(), 0, 0, &ptr);
+
+    sqlite3_close(db);
+}
+
 void DataManager::AdHoc() {
-    std::ifstream inputFile("info/data.csv");
-    std::ofstream tempFile("temp.csv");
-
-    std::string line;
-    bool done = false;
-    while (getline(inputFile, line)) {
-        auto t = Transaction::csv_line_to_transaction(line);
-        tempFile << t.csv_entry();
-    }
-
-    inputFile.close();
-    tempFile.close();
-
-    // Replace the original file with the modified temp file
-    remove("info/data.csv");
-    rename("temp.csv", "info/data.csv");
-
 }
