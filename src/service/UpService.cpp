@@ -178,9 +178,11 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
         if (skipTransaction(transaction))
             continue;
 
+        auto amount = stof((string) transaction["attributes"]["amount"]["value"]);
+
         transactions.push_back(
                 {
-                        stof((string) transaction["attributes"]["amount"]["value"]),
+                        (int) (amount * 100),
                         transaction["attributes"]["description"],
                         transaction["attributes"]["createdAt"],
                         map_tag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"])

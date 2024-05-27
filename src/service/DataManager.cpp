@@ -3,6 +3,7 @@
 #include "model/Tags.h"
 #include "model/Transaction.h"
 #include "service/DateHelper.h"
+#include "service/Repository.h"
 #include <date/date.h>
 #include <exception>
 #include <fmt/core.h>
@@ -30,13 +31,13 @@ void update_info(std::string date) {
 }
 
 Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
-    auto tag_to_amount = std::map<Tag, float>();
+    auto tag_to_amount = std::map<Tag, Amount>();
     for (auto& t : transactions) {
         tag_to_amount[t.tag] += t.amount;
     }
 
-    float income = tag_to_amount[INCOME];
-    float expense = 0;
+    Amount income = tag_to_amount[INCOME];
+    Amount expense = 0;
 
     for (auto& pair : tag_to_amount){
         if (pair.first == INCOME) continue;
@@ -54,11 +55,11 @@ Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
 }
 
 void DataManager::calculate_saved(std::vector<Account> accounts) {
-    float up = 0;
-    float anz = Config::start_balance;
+    Amount up = 0;
+    Amount anz = Config::start_balance;
 
     for (auto& a : accounts) {
-        up += a.balance;
+        up += (int) (a.balance * 100);
     }
 
     auto stats = calculate_stats(find_transactions(DateHelper::to_year_month_day(Config::begin), DateHelper::get_today(), false));
@@ -156,7 +157,7 @@ void DataManager::write(std::vector<Transaction> transactions) {
 
     for (auto& t : transactions) {
         fmt::print("{}\n", t.summary());
-        csv << t.csv_entry();   
+        csv << t.csv_entry();
     }
     csv.close();
 
@@ -166,7 +167,6 @@ void DataManager::write(std::vector<Transaction> transactions) {
 std::vector<Transaction> DataManager::find_transactions(const date::year_month_day& since, const date::year_month_day& to, bool print) {
     auto since_rfc = DateHelper::convertToRFC3339(since);
     auto to_rfc = DateHelper::convertToRFC3339(to, true);
-    fmt::print("since {}, to {}\n", since_rfc, to_rfc);
 
     std::ifstream csv;
     csv.open("info/data.csv");
@@ -189,14 +189,14 @@ std::vector<Transaction> DataManager::find_transactions(const date::year_month_d
     return transactions;
 }
 
-void create_table() {
+void create_db() {
     sqlite3* db;
 
     int rc = sqlite3_open("./info/up-client.db", &db);
 
     std::string sql = "CREATE TABLE \"Transaction\"("
                       "created_at text primary key, "
-                      "amount real not null, "
+                      "amount integer not null, "
                       "description text not null, "
                       "tag text not null);";
 
@@ -205,7 +205,22 @@ void create_table() {
     rc = sqlite3_exec(db, sql.c_str(), 0, 0, &ptr);
 
     sqlite3_close(db);
+
+    std::ifstream csv;
+    csv.open("info/data.csv");
+    std::string line;
+
+    auto storage = Repository::get_storage();
+
+    Transaction t;
+    while (getline(csv, line)) {
+        t = Transaction::csv_line_to_transaction(line);
+
+        storage.replace(t);
+    }
 }
 
 void DataManager::AdHoc() {
+    auto t = Repository::get_storage().get<Transaction>("2024-06-01T12:48:05+10:00");
+    fmt::print("{}\n", t.summary());
 }

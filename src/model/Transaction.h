@@ -8,16 +8,18 @@
 #include <string>
 #include <fmt/format.h>
 #include <model/Tags.h>
+#include <model/Amount.h>
 
 struct Transaction {
-    float amount;
+    // TODO: create new type so i don't have to wrap everything in to_dollars
+    Amount amount;
     std::string description;
     std::string createdAt;
     Tag tag;
 
     std::string csv_entry() {
-        return fmt::format("{:.2f},{},{},{}\n", 
-                           amount,
+        return fmt::format("{},{},{},{}\n", 
+                           amount.base(),
                            createdAt,
                            description,
                            to_string(tag));
@@ -41,10 +43,11 @@ struct Transaction {
         std::getline(iss, tag, ',');
 
         return {
-                stof(amount),
+                stoi(amount),
                 description,
                 createdAt,
                 tag_from_string(tag)
         };
     }
 };
+

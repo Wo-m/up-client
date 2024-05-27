@@ -72,7 +72,7 @@ private:
         auto tag = tag_from_string(get_input("tag"));
 
         Transaction transaction({
-            stof(amount),
+            (int) stof(amount) * 100,
             description,
             DateHelper::convertToRFC3339(date),
             tag
@@ -124,7 +124,6 @@ private:
                     "3: last pay",
                     "4: specific"));
 
-        fmt::print("here");
         date::year_month_day date;
         switch (stoi(choice)) {
             case 1:
