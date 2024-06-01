@@ -51,12 +51,6 @@ UpService::UpService() {
     }
 }
 
-std::string getLastTransactionDate() {
-    ifstream last_date("info/info.json");
-    auto stats = nlohmann::json::parse(last_date);
-    return stats["last_date"];
-}
-
 void UpService::logTransactions(const std::string &accountId, const std::string &since, const std::string &until) {
     vector<Transaction> transactions = getTransactions(accountId, since);
     for (auto &transaction : transactions) {
@@ -66,37 +60,19 @@ void UpService::logTransactions(const std::string &accountId, const std::string 
 
 vector<Transaction> UpService::find_new_transactions() {
     auto account = getTransactionalAccount();
-    string last_date = getLastTransactionDate();
-    return getTransactions(account.id, last_date);
+    auto last_date = DateHelper::get_backdate();
+    string last_date_rfc = DateHelper::convertToRFC3339(last_date);
+    return getTransactions(account.id, last_date_rfc);
 }
 
-/**
- * Get transactions for account
- * @param accountId
- * @param since rfc string
- * @param until
- * @return  Config();
- */
 vector<Transaction> UpService::getTransactions(const string &accountId, const string& since_) {
     Parameters parameters = Parameters{PAGE_SIZE};
     if (since_ != "")
         parameters.Add(since(since_));
-    
+
     json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
 
     vector<Transaction> transactions = mapTransactions(transactionsData);
-
-    if (transactions.empty() || transactions.size() == 1) {
-        // no new transactions (1 remaining is from last process)
-        // or mapping removed all transactions
-        fmt::print("no new transactions\n");
-        return {};
-    }
-
-
-    // reverse transactions
-    std::reverse(transactions.begin(), transactions.end());
-    transactions.erase(transactions.begin());
 
     return transactions;
 }
@@ -178,11 +154,13 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
         if (skipTransaction(transaction))
             continue;
 
-        auto amount = stof((string) transaction["attributes"]["amount"]["value"]);
+        auto amount_str = (string) transaction["attributes"]["amount"]["value"];
+        amount_str.erase(std::remove(amount_str.begin(), amount_str.end(), '.'));
+        auto amount = stoi(amount_str);
 
         transactions.push_back(
                 {
-                        (int) (amount * 100),
+                        amount,
                         transaction["attributes"]["description"],
                         transaction["attributes"]["createdAt"],
                         map_tag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"]),

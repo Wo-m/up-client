@@ -4,7 +4,7 @@
 #include <ctime>
 #include <date/date.h>
 #include <fmt/core.h>
-#include <iostream>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -34,11 +34,24 @@ public:
         return date::year_month_day{last_pay};
     }
 
+    static date::year_month_day getLastTransactionDate() {
+        ifstream last_date("info/info.json");
+        auto stats = nlohmann::json::parse(last_date);
+        return DateHelper::rfc_to_year_month_day(stats["last_date"]);
+    }
+
+    static date::year_month_day get_backdate() {
+        auto last_date = getLastTransactionDate();
+        auto backdate = date::year_month_day{ date::sys_days(last_date) - date::days(Config::backdated_fetch_days) };
+        return backdate;
+    }
+
     static date::year_month_day get_today() {
         auto todays_date = date::ceil<date::days>(std::chrono::system_clock::now());
         return todays_date;
     }
 
+    // CONVERTERS ------------------------------------------------------------------------------------------------
     static std::string convertToRFC3339(const std::string& date, bool eod = false) {
         return convertToRFC3339(to_year_month_day(date), eod);
     }
@@ -53,7 +66,7 @@ public:
 
         auto hms = eod ? end_of_day : start_of_day;
 
-        return fmt::format("{}-{:02d}-{}T{}+10:00", year, month, day, hms);
+        return fmt::format("{}-{:02d}-{:02d}T{}+10:00", year, month, day, hms);
     }
 
     static date::year_month_day to_year_month_day(const std::string& date) {
@@ -68,6 +81,19 @@ public:
 
         // Construct the year_month_day object
         return {date::year{year}, date::month{month}, date::day{day}};
+    }
+
+    static date::year_month_day rfc_to_year_month_day(const std::string& rfc) {
+        std::tm tm = {};
+        std::istringstream ss(rfc);
+        ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+        if (ss.fail()) {
+            throw std::runtime_error("Failed to parse date");
+        }
+
+        std::ostringstream out;
+        out << std::put_time(&tm, "%d/%m/%y");
+        return to_year_month_day(out.str());
     }
 
     static std::string to_string_yymmdd(date::year_month_day date) {

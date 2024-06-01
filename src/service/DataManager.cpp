@@ -14,6 +14,7 @@
 #include <nlohmann/json.hpp>
 #include <sqlite_orm/sqlite_orm.h>
 #include <string>
+#include <unordered_set>
 #include <vector>
 #include <sqlite3.h>
 
@@ -123,22 +124,62 @@ void DataManager::add_new_transaction(Transaction& transaction) {
     storage.replace(transaction);
 }
 
-void DataManager::write(std::vector<Transaction> transactions) {
+void DataManager::save_transactions(std::vector<Transaction> transactions) {
     auto storage = Repository::get_storage();
-    for (auto& t :transactions)
+
+    // get all transactions that overlap with fetch, not including manual entries
+    auto db_transactions = find_transactions(DateHelper::get_backdate(), DateHelper::get_today(), false, false);
+
+    // put transactions into ascending (oldest first)
+    std::reverse(transactions.begin(), transactions.end());
+
+    // add all values to db (replaces existing)
+    // and create set of dates
+    std::unordered_set<std::string> dates;
+    for (auto& t : transactions) {
         storage.replace(t);
+        dates.emplace(t.createdAt);
+    }
+
+    // remove any values that aren't in set (usually card checks)
+    for (auto & t : db_transactions) {
+        if (dates.find(t.createdAt) == dates.end()) {
+            storage.remove<Transaction>(t.createdAt);
+            fmt::print("removing transaction: {}\n", t.summary());
+        }
+    }
+
+    // we just use this to print
+    auto to_rfc = DateHelper::convertToRFC3339(DateHelper::get_today(), true);
+    auto new_transactions = find_transactions(db_transactions.back().createdAt, to_rfc, false, true);
+
+    if (new_transactions.size() > 1) {
+        new_transactions.erase(new_transactions.begin()); // last known transaction
+        fmt::print("NEW TRANSACTIONS\n");
+        for (auto& t : new_transactions)
+             fmt::print("{}\n", t.summary());
+    }
 
     update_info(transactions.back().createdAt);
 }
 
-std::vector<Transaction> DataManager::find_transactions(const date::year_month_day& since, const date::year_month_day& to, bool print) {
+std::vector<Transaction> DataManager::find_transactions(const date::year_month_day& since, const date::year_month_day& to, bool print, bool include_manual) {
     auto since_rfc = DateHelper::convertToRFC3339(since);
     auto to_rfc = DateHelper::convertToRFC3339(to, true);
+    return find_transactions(since_rfc, to_rfc, print, include_manual);
+}
 
+
+std::vector<Transaction> DataManager::find_transactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual) {
     auto storage = Repository::get_storage();
 
     using namespace sqlite_orm;
-    auto transactions = storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc)), order_by(&Transaction::createdAt));
+
+    // doesn't appear to be a way to prepare a statement and add to it without using strings
+    // this is a bit cumbersome but don't what to muddle with strings
+    auto transactions = (include_manual) ? storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc)), order_by(&Transaction::createdAt)) :
+        storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc) and c(&Transaction::manual) == 0), order_by(&Transaction::createdAt));
+
     if (print) {
         for (auto& t : transactions)
              fmt::print("{}\n", t.summary());
