@@ -12,6 +12,7 @@
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
 #include <nlohmann/json.hpp>
+#include <sqlite_orm/sqlite_orm.h>
 #include <string>
 #include <vector>
 #include <sqlite3.h>
@@ -118,48 +119,14 @@ nlohmann::json getCategories() {
 }
 
 void DataManager::add_new_transaction(Transaction& transaction) {
-    auto csv_line = transaction.csv_entry();
-
-    std::ifstream inputFile("info/data.csv");
-    std::ofstream tempFile("temp.csv");
-
-    std::string line;
-    bool done = false;
-    while (getline(inputFile, line)) {
-        auto t = Transaction::csv_line_to_transaction(line);
-
-        if (!done && (transaction.createdAt < t.createdAt)) {
-            // Add your new line after this line
-            tempFile << csv_line;
-            // Add your new line here
-            tempFile << line << std::endl;
-
-            done = true;
-        } else {
-            tempFile << line << std::endl;
-        }
-    }
-
-    inputFile.close();
-    tempFile.close();
-
-    // Replace the original file with the modified temp file
-    remove("info/data.csv");
-    rename("temp.csv", "info/data.csv");
+    auto storage = Repository::get_storage();
+    storage.replace(transaction);
 }
 
 void DataManager::write(std::vector<Transaction> transactions) {
-    std::ofstream csv;
-    csv.open("info/data.csv", std::ios_base::app);
-
-    float expense = 0;
-    float income = 0;
-
-    for (auto& t : transactions) {
-        fmt::print("{}\n", t.summary());
-        csv << t.csv_entry();
-    }
-    csv.close();
+    auto storage = Repository::get_storage();
+    for (auto& t :transactions)
+        storage.replace(t);
 
     update_info(transactions.back().createdAt);
 }
@@ -168,24 +135,15 @@ std::vector<Transaction> DataManager::find_transactions(const date::year_month_d
     auto since_rfc = DateHelper::convertToRFC3339(since);
     auto to_rfc = DateHelper::convertToRFC3339(to, true);
 
-    std::ifstream csv;
-    csv.open("info/data.csv");
-    std::string line;
+    auto storage = Repository::get_storage();
 
-    auto transactions = std::vector<Transaction>();
-    Transaction t;
-    while(1) {
-        getline(csv, line);
-        try {
-            t = Transaction::csv_line_to_transaction(line);
-        } catch (exception e) {
-            break;
-        }
-
-        if (t.createdAt < since_rfc || t.createdAt > to_rfc) continue;
-        if (print) fmt::print("{}\n", t.summary());
-        transactions.push_back(t);
+    using namespace sqlite_orm;
+    auto transactions = storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc)), order_by(&Transaction::createdAt));
+    if (print) {
+        for (auto& t : transactions)
+             fmt::print("{}\n", t.summary());
     }
+
     return transactions;
 }
 
