@@ -198,7 +198,8 @@ void create_db() {
                       "created_at text primary key, "
                       "amount integer not null, "
                       "description text not null, "
-                      "tag text not null);";
+                      "tag text not null, "
+                      "manual integer not null)";
 
     fmt::print("{}\n", sql);
     char* ptr = 0;
@@ -216,11 +217,17 @@ void create_db() {
     while (getline(csv, line)) {
         t = Transaction::csv_line_to_transaction(line);
 
+        if (t.description == "vivcourt" || t.description == "rent" || t.description == "reimburse")
+            t.manual = true;
+        else
+            t.manual = false;
+
         storage.replace(t);
     }
 }
 
 void DataManager::AdHoc() {
+    create_db();
     auto t = Repository::get_storage().get<Transaction>("2024-06-01T12:48:05+10:00");
     fmt::print("{}\n", t.summary());
 }

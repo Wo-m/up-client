@@ -75,7 +75,8 @@ private:
             (int) stof(amount) * 100,
             description,
             DateHelper::convertToRFC3339(date),
-            tag
+            tag,
+            true
         });
 
         DataManager::add_new_transaction(transaction);

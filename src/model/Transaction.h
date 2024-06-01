@@ -16,9 +16,10 @@ struct Transaction {
     std::string description;
     std::string createdAt;
     Tag tag;
+    bool manual;
 
     std::string csv_entry() {
-        return fmt::format("{},{},{},{}\n", 
+        return fmt::format("{},{},{},{}\n",
                            amount.base(),
                            createdAt,
                            description,

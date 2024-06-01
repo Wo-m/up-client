@@ -185,7 +185,8 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
                         (int) (amount * 100),
                         transaction["attributes"]["description"],
                         transaction["attributes"]["createdAt"],
-                        map_tag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"])
+                        map_tag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"]),
+                        false
                 });
     };
     return transactions;
