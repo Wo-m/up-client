@@ -11,7 +11,7 @@ string Config::up_api_key;
 int Config::pay_date;
 int Config::big_amount;
 string Config::begin;
-float Config::start_balance;
+int Config::start_balance;
 int Config::backdated_fetch_days;
 
 Config::Config() {
@@ -24,7 +24,7 @@ Config::Config() {
     pay_date = toml::find<int>(config_, "pay_date");
     big_amount = toml::find<int>(config_, "big_amount");
     begin = toml::find<string>(config_, "begin");
-    start_balance = toml::find<float>(config_, "start_balance");
+    start_balance = toml::find<int>(config_, "start_balance");
     backdated_fetch_days = toml::find<int>(config_, "backdated_fetch_days");
 
     loaded = true;

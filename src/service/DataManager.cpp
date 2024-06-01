@@ -3,6 +3,7 @@
 #include "model/Tags.h"
 #include "model/Transaction.h"
 #include "service/DateHelper.h"
+#include "service/Repository.h"
 #include <date/date.h>
 #include <exception>
 #include <fmt/core.h>
@@ -11,8 +12,11 @@
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
 #include <nlohmann/json.hpp>
+#include <sqlite_orm/sqlite_orm.h>
 #include <string>
+#include <unordered_set>
 #include <vector>
+#include <sqlite3.h>
 
 
 DataManager::DataManager() {
@@ -29,13 +33,13 @@ void update_info(std::string date) {
 }
 
 Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
-    auto tag_to_amount = std::map<Tag, float>();
+    auto tag_to_amount = std::map<Tag, Amount>();
     for (auto& t : transactions) {
         tag_to_amount[t.tag] += t.amount;
     }
 
-    float income = tag_to_amount[INCOME];
-    float expense = 0;
+    Amount income = tag_to_amount[INCOME];
+    Amount expense = 0;
 
     for (auto& pair : tag_to_amount){
         if (pair.first == INCOME) continue;
@@ -53,11 +57,11 @@ Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
 }
 
 void DataManager::calculate_saved(std::vector<Account> accounts) {
-    float up = 0;
-    float anz = Config::start_balance;
+    Amount up = 0;
+    Amount anz = Config::start_balance;
 
     for (auto& a : accounts) {
-        up += a.balance;
+        up += (int) (a.balance * 100);
     }
 
     auto stats = calculate_stats(find_transactions(DateHelper::to_year_month_day(Config::begin), DateHelper::get_today(), false));
@@ -116,94 +120,113 @@ nlohmann::json getCategories() {
 }
 
 void DataManager::add_new_transaction(Transaction& transaction) {
-    auto csv_line = transaction.csv_entry();
+    auto storage = Repository::get_storage();
+    storage.replace(transaction);
+}
 
-    std::ifstream inputFile("info/data.csv");
-    std::ofstream tempFile("temp.csv");
+void DataManager::save_transactions(std::vector<Transaction> transactions) {
+    auto storage = Repository::get_storage();
 
-    std::string line;
-    bool done = false;
-    while (getline(inputFile, line)) {
-        auto t = Transaction::csv_line_to_transaction(line);
+    // get all transactions that overlap with fetch, not including manual entries
+    auto db_transactions = find_transactions(DateHelper::get_backdate(), DateHelper::get_today(), false, false);
 
-        if (!done && (transaction.createdAt < t.createdAt)) {
-            // Add your new line after this line
-            tempFile << csv_line;
-            // Add your new line here
-            tempFile << line << std::endl;
+    // put transactions into ascending (oldest first)
+    std::reverse(transactions.begin(), transactions.end());
 
-            done = true;
-        } else {
-            tempFile << line << std::endl;
+    // add all values to db (replaces existing)
+    // and create set of dates
+    std::unordered_set<std::string> dates;
+    for (auto& t : transactions) {
+        storage.replace(t);
+        dates.emplace(t.createdAt);
+    }
+
+    // remove any values that aren't in set (usually card checks)
+    for (auto & t : db_transactions) {
+        if (dates.find(t.createdAt) == dates.end()) {
+            storage.remove<Transaction>(t.createdAt);
+            fmt::print("removing transaction: {}\n", t.summary());
         }
     }
 
-    inputFile.close();
-    tempFile.close();
+    // we just use this to print
+    auto to_rfc = DateHelper::convertToRFC3339(DateHelper::get_today(), true);
+    auto new_transactions = find_transactions(db_transactions.back().createdAt, to_rfc, false, true);
 
-    // Replace the original file with the modified temp file
-    remove("info/data.csv");
-    rename("temp.csv", "info/data.csv");
-}
-
-void DataManager::write(std::vector<Transaction> transactions) {
-    std::ofstream csv;
-    csv.open("info/data.csv", std::ios_base::app);
-
-    float expense = 0;
-    float income = 0;
-
-    for (auto& t : transactions) {
-        fmt::print("{}\n", t.summary());
-        csv << t.csv_entry();   
+    if (new_transactions.size() > 1) {
+        new_transactions.erase(new_transactions.begin()); // last known transaction
+        fmt::print("NEW TRANSACTIONS\n");
+        for (auto& t : new_transactions)
+             fmt::print("{}\n", t.summary());
     }
-    csv.close();
 
     update_info(transactions.back().createdAt);
 }
 
-std::vector<Transaction> DataManager::find_transactions(const date::year_month_day& since, const date::year_month_day& to, bool print) {
+std::vector<Transaction> DataManager::find_transactions(const date::year_month_day& since, const date::year_month_day& to, bool print, bool include_manual) {
     auto since_rfc = DateHelper::convertToRFC3339(since);
     auto to_rfc = DateHelper::convertToRFC3339(to, true);
-    fmt::print("since {}, to {}\n", since_rfc, to_rfc);
+    return find_transactions(since_rfc, to_rfc, print, include_manual);
+}
+
+
+std::vector<Transaction> DataManager::find_transactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual) {
+    auto storage = Repository::get_storage();
+
+    using namespace sqlite_orm;
+
+    // doesn't appear to be a way to prepare a statement and add to it without using strings
+    // this is a bit cumbersome but don't what to muddle with strings
+    auto transactions = (include_manual) ? storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc)), order_by(&Transaction::createdAt)) :
+        storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc) and c(&Transaction::manual) == 0), order_by(&Transaction::createdAt));
+
+    if (print) {
+        for (auto& t : transactions)
+             fmt::print("{}\n", t.summary());
+    }
+
+    return transactions;
+}
+
+void create_db() {
+    sqlite3* db;
+
+    int rc = sqlite3_open("./info/up-client.db", &db);
+
+    std::string sql = "CREATE TABLE \"Transaction\"("
+                      "created_at text primary key, "
+                      "amount integer not null, "
+                      "description text not null, "
+                      "tag text not null, "
+                      "manual integer not null)";
+
+    fmt::print("{}\n", sql);
+    char* ptr = 0;
+    rc = sqlite3_exec(db, sql.c_str(), 0, 0, &ptr);
+
+    sqlite3_close(db);
 
     std::ifstream csv;
     csv.open("info/data.csv");
     std::string line;
 
-    auto transactions = std::vector<Transaction>();
-    Transaction t;
-    while(1) {
-        getline(csv, line);
-        try {
-            t = Transaction::csv_line_to_transaction(line);
-        } catch (exception e) {
-            break;
-        }
+    auto storage = Repository::get_storage();
 
-        if (t.createdAt < since_rfc || t.createdAt > to_rfc) continue;
-        if (print) fmt::print("{}\n", t.summary());
-        transactions.push_back(t);
+    Transaction t;
+    while (getline(csv, line)) {
+        t = Transaction::csv_line_to_transaction(line);
+
+        if (t.description == "vivcourt" || t.description == "rent" || t.description == "reimburse")
+            t.manual = true;
+        else
+            t.manual = false;
+
+        storage.replace(t);
     }
-    return transactions;
 }
 
 void DataManager::AdHoc() {
-    std::ifstream inputFile("info/data.csv");
-    std::ofstream tempFile("temp.csv");
-
-    std::string line;
-    bool done = false;
-    while (getline(inputFile, line)) {
-        auto t = Transaction::csv_line_to_transaction(line);
-        tempFile << t.csv_entry();
-    }
-
-    inputFile.close();
-    tempFile.close();
-
-    // Replace the original file with the modified temp file
-    remove("info/data.csv");
-    rename("temp.csv", "info/data.csv");
-
+    create_db();
+    auto t = Repository::get_storage().get<Transaction>("2024-06-01T12:48:05+10:00");
+    fmt::print("{}\n", t.summary());
 }

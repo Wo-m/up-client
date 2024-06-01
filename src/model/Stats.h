@@ -5,22 +5,22 @@
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 #include <nlohmann/json.hpp>
+#include <model/Amount.h>
 
 struct Stats {
-    float income;
-    float expense;
-    float total;
+    Amount income;
+    Amount expense;
+    Amount total;
     std::string last_date;
-    std::map<Tag, float> tag_to_amount;
+    std::map<Tag, Amount> tag_to_amount;
 
     std::string summary() {
-        std::string tags_summary = ""; // expense only
-        float tags_total = 0;
+        std::string tags_summary; // expense only
         for (auto item: tag_to_amount) {
             if (item.first == INCOME) continue;
             tags_summary.append(fmt::format("{}: {:.2f} ", to_string(item.first), item.second));
-            tags_total += item.second;
         }
+
         return fmt::format("income: {:.2f} expense: {:.2f} total {:.2f}\n{}\n", income, expense, total, tags_summary);
     }
 };

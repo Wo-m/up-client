@@ -72,10 +72,11 @@ private:
         auto tag = tag_from_string(get_input("tag"));
 
         Transaction transaction({
-            stof(amount),
+            (int) (stof(amount) * 100),
             description,
             DateHelper::convertToRFC3339(date),
-            tag
+            tag,
+            true
         });
 
         DataManager::add_new_transaction(transaction);
@@ -89,17 +90,11 @@ private:
     void find_new_transactions() {
         auto transactions = upService.find_new_transactions();
         if (transactions.empty()) {
+            fmt::print("no new transactions\n");
             return;
         }
 
-        DataManager::write(transactions);
-        auto new_stats = DataManager::calculate_stats(transactions);
-        auto today = DateHelper::get_today();
-        auto overall = DataManager::calculate_stats(DataManager::find_transactions(DateHelper::to_year_month_day(Config::begin), today, false));
-
-        fmt::print("\nStatistics for new transactions:\n{}\nOverall:\n{}\n",
-                   new_stats.summary(),
-                   overall.summary());
+        DataManager::save_transactions(transactions);
     }
 
     void snapshot_menu() {
@@ -124,7 +119,6 @@ private:
                     "3: last pay",
                     "4: specific"));
 
-        fmt::print("here");
         date::year_month_day date;
         switch (stoi(choice)) {
             case 1:

@@ -42,6 +42,9 @@ target_link_libraries(${LIBRARY_NAME} PUBLIC fmt::fmt)
 # dates
 find_package(date CONFIG REQUIRED)
 target_link_libraries(${LIBRARY_NAME} PRIVATE date::date date::date-tz)
+# database
+find_package(SqliteOrm CONFIG REQUIRED)
+target_link_libraries(${LIBRARY_NAME} PRIVATE sqlite_orm::sqlite_orm)
 
 # EXECUTABLE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 add_executable(up-client app/main.cpp)                      # Create executable

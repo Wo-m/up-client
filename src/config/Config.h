@@ -14,7 +14,7 @@ public:
     static int pay_date;                // monthly pay date
     static int big_amount;              // amount to be classified as BIG transaction
     static std::string begin;           // start of transactions
-    static float start_balance;         // balance before use
+    static int start_balance;         // balance before use
     static int backdated_fetch_days;    // amount of days to backdate new transacions fetch. Used to removed pending transactions
     Config();
 };
