@@ -5,10 +5,12 @@
 #include "model/Transaction.h"
 #include "service/DataManager.h"
 #include "service/DateHelper.h"
+#include "service/Repository.h"
 #include "service/UpService.h"
 #include <date/date.h>
 #include <fmt/core.h>
 #include <iostream>
+#include <sqlite_orm/sqlite_orm.h>
 #include <string>
 
 using namespace std;
@@ -19,7 +21,7 @@ public:
     void main()
     {
         // do this on boot
-        find_new_transactions();
+        start_up();
         string input;
         while (1)
         {
@@ -138,5 +140,55 @@ private:
         auto stats = DataManager::CalculateStats(transactions);
 
         fmt::print("{}\n", stats.summary());
+    }
+
+    void start_up()
+    {
+        find_new_transactions();
+
+        using namespace sqlite_orm;
+        auto storage = Repository::get_storage();
+        auto today = date::sys_days(DateHelper::GetToday());
+
+        // auto add pay
+        auto income_transactions =
+            storage.get_all<Transaction>(where(c(&Transaction::tag) == INCOME), order_by(&Transaction::createdAt));
+        auto last_pay_date = DateHelper::RFCToYearMonthDay(income_transactions.back().createdAt);
+
+        if (last_pay_date + date::months(1) <= today)
+        {
+            fmt::print("auto adding pay:\n");
+            auto new_pay_date = last_pay_date + date::months(1);
+            assert(new_pay_date.day() == date::day(18));
+            while (new_pay_date <= today) {
+                Transaction t{
+                    624934, "vivcourt", DateHelper::ConvertToRFC(new_pay_date), INCOME, true
+                };
+                fmt::print("{}\n", t.summary());
+                storage.replace(t);
+                new_pay_date += date::months(1);
+            }
+        }
+
+        // auto add rent
+        auto rent_transactions = storage.get_all<Transaction>(where(c(&Transaction::description) == "rent"),
+                                                              order_by(&Transaction::createdAt));
+        auto last_rent_date = date::sys_days(DateHelper::RFCToYearMonthDay(rent_transactions.back().createdAt));
+
+        if ((today - last_rent_date) >= date::days(13))
+        {
+            fmt::print("auto adding rent:\n");
+            auto new_rent_date = last_rent_date + date::days(13);
+            while (new_rent_date <= today)
+            {
+                Transaction t{
+                    -120000, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
+                };
+
+                fmt::print("{}\n", t.summary());
+                storage.replace(t);
+                new_rent_date += date::days(13);
+            }
+        }
     }
 };
