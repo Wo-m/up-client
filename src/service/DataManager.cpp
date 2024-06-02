@@ -32,7 +32,7 @@ void update_info(std::string date) {
 
 }
 
-Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
+Stats DataManager::CalculateStats(std::vector<Transaction> transactions) {
     auto tag_to_amount = std::map<Tag, Amount>();
     for (auto& t : transactions) {
         tag_to_amount[t.tag] += t.amount;
@@ -56,7 +56,7 @@ Stats DataManager::calculate_stats(std::vector<Transaction> transactions) {
     };
 }
 
-void DataManager::calculate_saved(std::vector<Account> accounts) {
+void DataManager::CalculateSaved(std::vector<Account> accounts) {
     Amount up = 0;
     Amount anz = Config::start_balance;
 
@@ -64,20 +64,20 @@ void DataManager::calculate_saved(std::vector<Account> accounts) {
         up += (int) (a.balance * 100);
     }
 
-    auto stats = calculate_stats(find_transactions(DateHelper::to_year_month_day(Config::begin), DateHelper::get_today(), false));
+    auto stats = CalculateStats(FindTransactions(DateHelper::ToYearMonthDay(Config::begin), DateHelper::GetToday(), false));
 
     anz += stats.income + stats.expense - up;
 
     fmt::print("anz/savings {:.2f} | up {:.2f} | income {:.2f} | expense {:.2f}\n\n", anz, up, stats.income, stats.expense);
 }
 
-void DataManager::snapshot(int choice, bool show_transactions) {
+void DataManager::GenerateSnapshots(int choice, bool show_transactions) {
     std::vector<date::year_month_day> dates;
     switch (choice) {
         case 1:
             {
-                auto last_mon = DateHelper::get_last_monday();
-                while (last_mon >= DateHelper::to_year_month_day(Config::begin)) {
+                auto last_mon = DateHelper::GetLastMonday();
+                while (last_mon >= DateHelper::ToYearMonthDay(Config::begin)) {
                     dates.insert(dates.begin(), last_mon);
                     last_mon = date::year_month_day{date::sys_days(last_mon) - date::weeks(1)};
                 }
@@ -85,8 +85,8 @@ void DataManager::snapshot(int choice, bool show_transactions) {
             }
         case 2:
             {
-                auto last_pay = DateHelper::get_last_pay();
-                while (last_pay >= DateHelper::to_year_month_day(Config::begin)) {
+                auto last_pay = DateHelper::GetLastPay();
+                while (last_pay >= DateHelper::ToYearMonthDay(Config::begin)) {
                     dates.insert(dates.begin(), last_pay);
                     last_pay = last_pay - date::months(1);
                 }
@@ -95,19 +95,19 @@ void DataManager::snapshot(int choice, bool show_transactions) {
 
     std::vector<Transaction> transactions;
     Stats stats;
-    auto today =  DateHelper::get_today();
+    auto today =  DateHelper::GetToday();
     for (int i = 1; i <= dates.size(); i++) {
         auto since = dates.at(i-1);
         if (i == dates.size()) {
-            transactions = find_transactions(since, today, show_transactions);
+            transactions = FindTransactions(since, today, show_transactions);
         }
         else {
             auto to = date::year_month_day{ date::sys_days(dates.at(i)) - date::days(1) };
-            transactions = find_transactions(since, to, show_transactions);
+            transactions = FindTransactions(since, to, show_transactions);
         }
         if (transactions.size() == 0) continue;
-        stats = calculate_stats(transactions);
-        fmt::print("----- start: {} -------\n{}-----------------------------\n", DateHelper::to_string_yymmdd(since), stats.summary());
+        stats = CalculateStats(transactions);
+        fmt::print("----- start: {} -------\n{}-----------------------------\n", DateHelper::ToStringDDMMYY(since), stats.summary());
     }
 
 
@@ -119,16 +119,16 @@ nlohmann::json getCategories() {
     return nlohmann::json::parse(ifs);
 }
 
-void DataManager::add_new_transaction(Transaction& transaction) {
+void DataManager::AddTransaction(Transaction& transaction) {
     auto storage = Repository::get_storage();
     storage.replace(transaction);
 }
 
-void DataManager::save_transactions(std::vector<Transaction> transactions) {
+void DataManager::UpdateTransactions(std::vector<Transaction> transactions) {
     auto storage = Repository::get_storage();
 
     // get all transactions that overlap with fetch, not including manual entries
-    auto db_transactions = find_transactions(DateHelper::get_backdate(), DateHelper::get_today(), false, false);
+    auto db_transactions = FindTransactions(DateHelper::GetBackdate(), DateHelper::GetToday(), false, false);
 
     // put transactions into ascending (oldest first)
     std::reverse(transactions.begin(), transactions.end());
@@ -150,8 +150,8 @@ void DataManager::save_transactions(std::vector<Transaction> transactions) {
     }
 
     // we just use this to print
-    auto to_rfc = DateHelper::convertToRFC3339(DateHelper::get_today(), true);
-    auto new_transactions = find_transactions(db_transactions.back().createdAt, to_rfc, false, true);
+    auto to_rfc = DateHelper::ConvertToRFC(DateHelper::GetToday(), true);
+    auto new_transactions = FindTransactions(db_transactions.back().createdAt, to_rfc, false, true);
 
     if (new_transactions.size() > 1) {
         new_transactions.erase(new_transactions.begin()); // last known transaction
@@ -163,14 +163,14 @@ void DataManager::save_transactions(std::vector<Transaction> transactions) {
     update_info(transactions.back().createdAt);
 }
 
-std::vector<Transaction> DataManager::find_transactions(const date::year_month_day& since, const date::year_month_day& to, bool print, bool include_manual) {
-    auto since_rfc = DateHelper::convertToRFC3339(since);
-    auto to_rfc = DateHelper::convertToRFC3339(to, true);
-    return find_transactions(since_rfc, to_rfc, print, include_manual);
+std::vector<Transaction> DataManager::FindTransactions(const date::year_month_day& since, const date::year_month_day& to, bool print, bool include_manual) {
+    auto since_rfc = DateHelper::ConvertToRFC(since);
+    auto to_rfc = DateHelper::ConvertToRFC(to, true);
+    return FindTransactions(since_rfc, to_rfc, print, include_manual);
 }
 
 
-std::vector<Transaction> DataManager::find_transactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual) {
+std::vector<Transaction> DataManager::FindTransactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual) {
     auto storage = Repository::get_storage();
 
     using namespace sqlite_orm;

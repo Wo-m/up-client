@@ -66,7 +66,7 @@ private:
     }
 
     void add_new_transaction() {
-        auto date = DateHelper::to_year_month_day(get_input("date (dd/mm/yy)"));
+        auto date = DateHelper::ToYearMonthDay(get_input("date (dd/mm/yy)"));
         auto amount = get_input("amount");
         auto description = get_input("description");
         auto tag = tag_from_string(get_input("tag"));
@@ -74,27 +74,27 @@ private:
         Transaction transaction({
             (int) (stof(amount) * 100),
             description,
-            DateHelper::convertToRFC3339(date),
+            DateHelper::ConvertToRFC(date),
             tag,
             true
         });
 
-        DataManager::add_new_transaction(transaction);
+        DataManager::AddTransaction(transaction);
     }
 
     void savings() {
-        auto accounts = upService.get_accounts();
-        DataManager::calculate_saved(accounts);
+        auto accounts = upService.GetAccounts();
+        DataManager::CalculateSaved(accounts);
     }
 
     void find_new_transactions() {
-        auto transactions = upService.find_new_transactions();
+        auto transactions = upService.FindNewTransactions();
         if (transactions.empty()) {
             fmt::print("no new transactions\n");
             return;
         }
 
-        DataManager::save_transactions(transactions);
+        DataManager::UpdateTransactions(transactions);
     }
 
     void snapshot_menu() {
@@ -108,7 +108,7 @@ private:
                     "0: no",
                     "1: yes"));
 
-        DataManager::snapshot(stoi(choice), stoi(show));
+        DataManager::GenerateSnapshots(stoi(choice), stoi(show));
     }
 
     void stats_menu() {
@@ -122,22 +122,22 @@ private:
         date::year_month_day date;
         switch (stoi(choice)) {
             case 1:
-                date = DateHelper::to_year_month_day(Config::begin);
+                date = DateHelper::ToYearMonthDay(Config::begin);
                 break;
             case 2:
-                date = DateHelper::get_last_monday();
+                date = DateHelper::GetLastMonday();
                 break;
             case 3:
-                date = DateHelper::get_last_pay();
+                date = DateHelper::GetLastPay();
                 break;
             case 4:
-                date = DateHelper::to_year_month_day(get_input("please enter a date (dd/mm/yy)"));
+                date = DateHelper::ToYearMonthDay(get_input("please enter a date (dd/mm/yy)"));
                 break;
         }
 
-        auto today = DateHelper::get_today();
-        auto transactions = DataManager::find_transactions(date, today, true);
-        auto stats = DataManager::calculate_stats(transactions);
+        auto today = DateHelper::GetToday();
+        auto transactions = DataManager::FindTransactions(date, today, true);
+        auto stats = DataManager::CalculateStats(transactions);
 
         fmt::print("{}\n", stats.summary());
     }

@@ -10,30 +10,29 @@
 #include <cpr/cpr.h>
 #include <utility>
 #include "config/Config.h"
+#include "service/DateHelper.h"
 
 class UpService {
 public:
     UpService();
 
-    void logTransactions(const std::string& accountId, const std::string& since, const std::string& until);
-    std::vector<Transaction> find_new_transactions();
-    std::vector<Transaction> getTransactions(const std::string &accountId, const std::string &since);
-    Account getTransactionalAccount();
-    std::vector<Account> get_accounts();
-    void getCategories();
+    std::vector<Transaction> FindNewTransactions();
+    std::vector<Transaction> GetTransactions(const std::string &accountId, const std::string &since);
+    Account GetTransactionalAccount();
+    std::vector<Account> GetAccounts();
+    void GetCategories();
 
 private:
-    nlohmann::json get(const std::string& path, const cpr::Parameters& params);
-    nlohmann::json getPaged(const std::string& path, const cpr::Parameters& params);
-    nlohmann::json post(const std::string& path, const std::string& body);
-    static std::string convertToRFC3339(const std::string& inputDate);
-    bool skipTransaction(const nlohmann::json&);
-    Tag map_tag(std::string desc, std::string amount);
+    nlohmann::json Get(const std::string& path, const cpr::Parameters& params);
+    nlohmann::json GetPaged(const std::string& path, const cpr::Parameters& params);
+    nlohmann::json Post(const std::string& path, const std::string& body);
+    bool SkipTransaction(const nlohmann::json&);
+    Tag MapTag(std::string desc, std::string amount);
 
     // Static Helper Methods
     static cpr::Parameter since(const std::string& date) { return cpr::Parameter{"filter[since]", date};}
-    static cpr::Parameter until(const std::string& date) { return cpr::Parameter{"filter[until]", convertToRFC3339(date)};}
-    std::vector<Transaction> mapTransactions(const nlohmann::json& transactionsData);
+    static cpr::Parameter until(const std::string& date) { return cpr::Parameter{"filter[until]", DateHelper::ConvertToRFC(date)};}
+    std::vector<Transaction> MapTransactions(const nlohmann::json& transactionsData);
 
     // Member vars
     std::set<std::string> ignore; // descriptions to ignore

@@ -10,7 +10,6 @@
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
-#include <nlohmann/json_fwd.hpp>
 #include <set>
 #include <string>
 #include <utility>
@@ -51,35 +50,28 @@ UpService::UpService() {
     }
 }
 
-void UpService::logTransactions(const std::string &accountId, const std::string &since, const std::string &until) {
-    vector<Transaction> transactions = getTransactions(accountId, since);
-    for (auto &transaction : transactions) {
-        fmt::print(transaction.summary());
-    }
+vector<Transaction> UpService::FindNewTransactions() {
+    auto account = GetTransactionalAccount();
+    auto last_date = DateHelper::GetBackdate();
+    string last_date_rfc = DateHelper::ConvertToRFC(last_date);
+    return GetTransactions(account.id, last_date_rfc);
 }
 
-vector<Transaction> UpService::find_new_transactions() {
-    auto account = getTransactionalAccount();
-    auto last_date = DateHelper::get_backdate();
-    string last_date_rfc = DateHelper::convertToRFC3339(last_date);
-    return getTransactions(account.id, last_date_rfc);
-}
-
-vector<Transaction> UpService::getTransactions(const string &accountId, const string& since_) {
+vector<Transaction> UpService::GetTransactions(const string &accountId, const string& since_) {
     Parameters parameters = Parameters{PAGE_SIZE};
     if (since_ != "")
         parameters.Add(since(since_));
 
-    json transactionsData = this->getPaged("accounts/" + accountId + "/transactions",parameters);
+    json transactionsData = this->GetPaged("accounts/" + accountId + "/transactions",parameters);
 
-    vector<Transaction> transactions = mapTransactions(transactionsData);
+    vector<Transaction> transactions = MapTransactions(transactionsData);
 
     return transactions;
 }
 
-vector<Account> UpService::get_accounts() {
+vector<Account> UpService::GetAccounts() {
     // TODO Cache
-    json data = this->get("accounts", {});
+    json data = this->Get("accounts", {});
 
     vector<Account> accounts;
 
@@ -99,8 +91,8 @@ vector<Account> UpService::get_accounts() {
  * Get Transactional Account
  * @return
  */
-Account UpService::getTransactionalAccount() {
-    auto accounts = get_accounts();
+Account UpService::GetTransactionalAccount() {
+    auto accounts = GetAccounts();
     auto account = std::find_if(accounts.begin(), accounts.end(), [](const Account& a) {
         return a.transactional;
     });
@@ -114,8 +106,8 @@ Account UpService::getTransactionalAccount() {
  * @param params
  * @return
  */
-json UpService::getPaged(const std::string &path, const cpr::Parameters &params) {
-    Response r = Get(Url{UP_API + path}, BEARER, params);
+json UpService::GetPaged(const std::string &path, const cpr::Parameters &params) {
+    Response r = cpr::Get(Url{UP_API + path}, BEARER, params);
     cout << r.status_code << " for GET from " << path << endl;
 
     json data = json::parse(r.text);
@@ -123,7 +115,7 @@ json UpService::getPaged(const std::string &path, const cpr::Parameters &params)
 
     // pagination
     while (next != nullptr) {
-        r = Get(Url{next}, BEARER);
+        r = cpr::Get(Url{next}, BEARER);
         cout << r.status_code << " for GET from " << path << " page: " << next << endl;
 
         json nextData = json::parse(r.text);
@@ -135,23 +127,23 @@ json UpService::getPaged(const std::string &path, const cpr::Parameters &params)
     return data;
 }
 
-json UpService::get(const string& path, const Parameters& params) {
-    Response r = Get(Url{UP_API + path}, BEARER, params);
+json UpService::Get(const string& path, const Parameters& params) {
+    Response r = cpr::Get(Url{UP_API + path}, BEARER, params);
     cout << r.status_code << " for GET from " << path << endl;
     return json::parse(r.text);
 }
 
-json UpService::post(const string& path, const string& body) {
-    Response r =  Post(Url{UP_API + path}, BEARER, Body{body});
+json UpService::Post(const string& path, const string& body) {
+    Response r =  cpr::Post(Url{UP_API + path}, BEARER, Body{body});
     cout << r.status_code << " for POST to " << path << endl;
     return json::parse(r.text);
 }
 
-vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
+vector<Transaction> UpService::MapTransactions(const json& transactionsData) {
     vector<Transaction> transactions;
     for (auto &transaction: transactionsData["data"]) {
 
-        if (skipTransaction(transaction))
+        if (SkipTransaction(transaction))
             continue;
 
         auto amount_str = (string) transaction["attributes"]["amount"]["value"];
@@ -163,7 +155,7 @@ vector<Transaction> UpService::mapTransactions(const json& transactionsData) {
                         amount,
                         transaction["attributes"]["description"],
                         transaction["attributes"]["createdAt"],
-                        map_tag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"]),
+                        MapTag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"]),
                         false
                 });
     };
@@ -174,11 +166,11 @@ bool IsInternalTransfer(const json& data) {
     return !data["relationships"]["transferAccount"]["data"].is_null();
 }
 
-bool UpService::skipTransaction(const json& data) {
+bool UpService::SkipTransaction(const json& data) {
     return ignore.find(data["attributes"]["description"]) != ignore.end() || IsInternalTransfer(data);
 }
 
-Tag UpService::map_tag(std::string desc, std::string amount) {
+Tag UpService::MapTag(std::string desc, std::string amount) {
     std::pair<Tag, std::string> pair;
     try {
         pair = tag.at(desc);
@@ -203,9 +195,9 @@ Tag UpService::map_tag(std::string desc, std::string amount) {
 * ad hoc to store all sub-categories
 * in a josn file in pairs -> (sub-cat, cat)
 */
-void UpService::getCategories() {
+void UpService::GetCategories() {
     Parameters params;
-    json data = this->get("categories/", params);
+    json data = this->Get("categories/", params);
 
     data = data["data"];
 
