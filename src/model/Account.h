@@ -6,7 +6,8 @@
 
 #include <string>
 
-struct Account {
+struct Account
+{
     std::string id;
     std::string name;
     float balance;
