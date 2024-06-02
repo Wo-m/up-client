@@ -1,25 +1,28 @@
 
 #pragma once
-#include <string>
-#include <fmt/core.h>
-#include <iostream>
 #include "config/Config.h"
 #include "model/Tags.h"
 #include "model/Transaction.h"
+#include "service/DataManager.h"
 #include "service/DateHelper.h"
 #include "service/UpService.h"
-#include "service/DataManager.h"
 #include <date/date.h>
+#include <fmt/core.h>
+#include <iostream>
+#include <string>
 
 using namespace std;
 
-class Menu {
+class Menu
+{
 public:
-    void main() {
+    void main()
+    {
         // do this on boot
         find_new_transactions();
         string input;
-        while (1) {
+        while (1)
+        {
             fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n",
                        "1: add new transactions",
                        "2: stats",
@@ -29,7 +32,8 @@ public:
                        "0: quit");
             cin >> input;
 
-            switch (stoi(input)) {
+            switch (stoi(input))
+            {
                 case 0:
                     return;
                 case -1:
@@ -55,89 +59,83 @@ public:
     }
 
 private:
-
     UpService upService;
 
-    string get_input(std::string question) {
+    string get_input(std::string question)
+    {
         fmt::print("{}\n", question);
         string input;
         cin >> input;
         return input;
     }
 
-    void add_new_transaction() {
-        auto date = DateHelper::to_year_month_day(get_input("date (dd/mm/yy)"));
+    void add_new_transaction()
+    {
+        auto date = DateHelper::ToYearMonthDay(get_input("date (dd/mm/yy)"));
         auto amount = get_input("amount");
         auto description = get_input("description");
         auto tag = tag_from_string(get_input("tag"));
 
-        Transaction transaction({
-            (int) (stof(amount) * 100),
-            description,
-            DateHelper::convertToRFC3339(date),
-            tag,
-            true
-        });
+        Transaction transaction({ (int)(stof(amount) * 100), description, DateHelper::ConvertToRFC(date), tag, true });
 
-        DataManager::add_new_transaction(transaction);
+        DataManager::AddTransaction(transaction);
     }
 
-    void savings() {
-        auto accounts = upService.get_accounts();
-        DataManager::calculate_saved(accounts);
+    void savings()
+    {
+        auto accounts = upService.GetAccounts();
+        DataManager::CalculateSaved(accounts);
     }
 
-    void find_new_transactions() {
-        auto transactions = upService.find_new_transactions();
-        if (transactions.empty()) {
+    void find_new_transactions()
+    {
+        auto transactions = upService.FindNewTransactions();
+        if (transactions.empty())
+        {
             fmt::print("no new transactions\n");
             return;
         }
 
-        DataManager::save_transactions(transactions);
+        DataManager::UpdateTransactions(transactions);
     }
 
-    void snapshot_menu() {
-        string choice = get_input(
-            fmt::format("please pick an option:\n{}\n{}\n",
-                    "1: weekly",
-                    "2: pay cycle",
-                    "0: back"));
-        string show = get_input(
-            fmt::format("show transactions?:\n{}\n{}\n",
-                    "0: no",
-                    "1: yes"));
+    void snapshot_menu()
+    {
+        string choice =
+            get_input(fmt::format("please pick an option:\n{}\n{}\n", "1: weekly", "2: pay cycle", "0: back"));
+        string show = get_input(fmt::format("show transactions?:\n{}\n{}\n", "0: no", "1: yes"));
 
-        DataManager::snapshot(stoi(choice), stoi(show));
+        DataManager::GenerateSnapshots(stoi(choice), stoi(show));
     }
 
-    void stats_menu() {
-        string choice = get_input(
-            fmt::format("please pick an option:\n{}\n{}\n{}\n{}\n",
-                    "1: all",
-                    "2: week (starting mon)",
-                    "3: last pay",
-                    "4: specific"));
+    void stats_menu()
+    {
+        string choice = get_input(fmt::format("please pick an option:\n{}\n{}\n{}\n{}\n",
+                                              "1: all",
+                                              "2: week (starting mon)",
+                                              "3: last pay",
+                                              "4: specific"));
 
         date::year_month_day date;
-        switch (stoi(choice)) {
+        switch (stoi(choice))
+        {
             case 1:
-                date = DateHelper::to_year_month_day(Config::begin);
+                date = DateHelper::ToYearMonthDay(Config::begin);
                 break;
             case 2:
-                date = DateHelper::get_last_monday();
+                date = DateHelper::GetLastMonday();
                 break;
             case 3:
-                date = DateHelper::get_last_pay();
+                date = DateHelper::GetLastPay();
                 break;
             case 4:
-                date = DateHelper::to_year_month_day(get_input("please enter a date (dd/mm/yy)"));
+                date = DateHelper::ToYearMonthDay(get_input("please enter a date (dd/mm/yy)"));
                 break;
         }
 
-        auto today = DateHelper::get_today();
-        auto transactions = DataManager::find_transactions(date, today, true);
-        auto stats = DataManager::calculate_stats(transactions);
+        auto today = DateHelper::GetToday();
+        auto transactions = DataManager::FindTransactions(date, today, true);
+        auto stats = DataManager::CalculateStats(transactions);
 
         fmt::print("{}\n", stats.summary());
     }

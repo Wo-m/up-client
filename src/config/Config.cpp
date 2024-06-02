@@ -14,9 +14,11 @@ string Config::begin;
 int Config::start_balance;
 int Config::backdated_fetch_days;
 
-Config::Config() {
+Config::Config()
+{
     // static constructor
-    if (loaded) return;
+    if (loaded)
+        return;
     auto config_ = toml::parse("info/config.toml");
 
     // Load all values
