@@ -159,10 +159,10 @@ private:
         {
             fmt::print("auto adding pay:\n");
             auto new_pay_date = last_pay_date + date::months(1);
-            assert(new_pay_date.day() == date::day(18));
+            assert(new_pay_date.day() == date::day(Config::pay_date));
             while (new_pay_date <= today) {
                 Transaction t{
-                    624934, "vivcourt", DateHelper::ConvertToRFC(new_pay_date), INCOME, true
+                    Config::pay_amount, "vivcourt", DateHelper::ConvertToRFC(new_pay_date), INCOME, true
                 };
                 fmt::print("{}\n", t.summary());
                 storage.replace(t);
@@ -175,19 +175,19 @@ private:
                                                               order_by(&Transaction::createdAt));
         auto last_rent_date = date::sys_days(DateHelper::RFCToYearMonthDay(rent_transactions.back().createdAt));
 
-        if ((today - last_rent_date) >= date::days(13))
+        if ((today - last_rent_date) >= date::days(Config::rent_cycle - 1))
         {
             fmt::print("auto adding rent:\n");
-            auto new_rent_date = last_rent_date + date::days(13);
+            auto new_rent_date = last_rent_date + date::days(Config::rent_cycle - 1);
             while (new_rent_date <= today)
             {
                 Transaction t{
-                    -120000, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
+                    Config::rent_amount, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
                 };
 
                 fmt::print("{}\n", t.summary());
                 storage.replace(t);
-                new_rent_date += date::days(13);
+                new_rent_date += date::days(Config::rent_cycle - 1);
             }
         }
     }
