@@ -175,10 +175,10 @@ private:
                                                               order_by(&Transaction::createdAt));
         auto last_rent_date = date::sys_days(DateHelper::RFCToYearMonthDay(rent_transactions.back().createdAt));
 
-        if ((today - last_rent_date) >= date::days(Config::rent_cycle - 1))
+        if ((last_rent_date + date::days(Config::rent_cycle)) <= today)
         {
             fmt::print("auto adding rent:\n");
-            auto new_rent_date = last_rent_date + date::days(Config::rent_cycle - 1);
+            auto new_rent_date = last_rent_date + date::days(Config::rent_cycle);
             while (new_rent_date <= today)
             {
                 Transaction t{
@@ -187,7 +187,7 @@ private:
 
                 fmt::print("{}\n", t.summary());
                 storage.replace(t);
-                new_rent_date += date::days(Config::rent_cycle - 1);
+                new_rent_date += date::days(Config::rent_cycle);
             }
         }
     }
