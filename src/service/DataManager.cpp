@@ -148,7 +148,13 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
     std::unordered_set<std::string> dates;
     for (auto& t : transactions)
     {
-        storage.replace(t);
+        // get ptr to matching transaction in db
+        // only insert if its a new transaction
+        // otherwise if we manually set tags they get overriden
+        // (may want to rethink this if it becomes an issue)
+        auto t_ptr = storage.get_pointer<Transaction>(t.createdAt);
+        if (!t_ptr)
+            storage.replace(t);
         dates.emplace(t.createdAt);
     }
 
