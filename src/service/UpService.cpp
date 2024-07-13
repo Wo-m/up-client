@@ -193,19 +193,19 @@ Tag UpService::MapTag(std::string desc, std::string amount)
     }
     catch (exception e)
     {
-        return NONE;
+        // no matching tag for desc, check if we can apply big tag
+        // negative values, so less than
+        if (stoi(amount) < Config::big_amount)
+        {
+            return BIG;
+        }
     }
 
-    if (pair.second == "0")
+    // either we have an exact match for the amount expected,
+    // or the tag is applied to all transactions from merchant
+    // regardless of amount
+    if (pair.second == amount || pair.second == "0")
         return pair.first;
-
-    if (pair.second == amount)
-        return pair.first;
-
-    if (stoi(amount) > Config::big_amount)
-    {
-        return BIG;
-    }
 
     return NONE;
 }
