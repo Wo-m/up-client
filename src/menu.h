@@ -25,14 +25,13 @@ public:
         string input;
         while (1)
         {
-            fmt::print("{}\n{}\n{}\n{}\n{}\n{}\n",
+            input = get_input(fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n",
                        "1: add new transactions",
                        "2: stats",
                        "3: snapshots",
                        "4: savings",
                        "-1: AdHoc",
-                       "0: quit");
-            cin >> input;
+                       "0: quit"));
 
             switch (stoi(input))
             {
@@ -63,20 +62,24 @@ public:
 private:
     UpService upService;
 
-    string get_input(std::string question)
+    string get_input(std::string question, std::string default_choice = "")
     {
         fmt::print("{}\n", question);
         string input;
-        cin >> input;
+        getline(cin, input);
+
+        if (input.empty())
+            return default_choice;
+
         return input;
     }
 
     void add_new_transaction()
     {
-        auto date = DateHelper::ToYearMonthDay(get_input("date (dd/mm/yy)"));
-        auto amount = get_input("amount");
+        auto date = DateHelper::ToYearMonthDay(get_input("date (dd/mm/yy) (empty for today)", DateHelper::ToStringDDMMYY(DateHelper::GetToday())));
+        auto amount = get_input("amount (in dollars: 100.00 -> $100)");
         auto description = get_input("description");
-        auto tag = tag_from_string(get_input("tag"));
+        auto tag = tag_from_string(get_input("tag (empty for none)", "NONE"));
 
         Transaction transaction({ (int)(stof(amount) * 100), description, DateHelper::ConvertToRFC(date), tag, true });
 
