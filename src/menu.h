@@ -27,7 +27,7 @@ public:
         {
             input = get_input(fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n",
                        "1: add new transactions",
-                       "2: stats",
+                       "2: list transactions",
                        "3: snapshots",
                        "4: savings",
                        "-1: AdHoc",
@@ -44,7 +44,7 @@ public:
                     add_new_transaction();
                     break;
                 case 2:
-                    stats_menu();
+                    list_transactions();
                     break;
                 case 3:
                     snapshot_menu();
@@ -113,7 +113,7 @@ private:
         DataManager::GenerateSnapshots(stoi(choice), stoi(show));
     }
 
-    void stats_menu()
+    void list_transactions()
     {
         string choice = get_input(fmt::format("please pick an option:\n{}\n{}\n{}\n{}\n",
                                               "1: all",
