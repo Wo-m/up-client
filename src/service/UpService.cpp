@@ -165,7 +165,8 @@ vector<Transaction> UpService::MapTransactions(const json& transactionsData)
         auto amount = stoi(amount_str);
 
         transactions.push_back(
-            { amount,
+            { 0,
+              amount,
               transaction["attributes"]["description"],
               transaction["attributes"]["createdAt"],
               MapTag(transaction["attributes"]["description"], transaction["attributes"]["amount"]["value"]),
@@ -176,7 +177,12 @@ vector<Transaction> UpService::MapTransactions(const json& transactionsData)
 
 bool IsInternalTransfer(const json& data)
 {
-    return !data["relationships"]["transferAccount"]["data"].is_null();
+    const static std::set<std::string> internal_types{"Transfer", "Scheduled Transfer"};
+
+    if (data["attributes"]["transactionType"].is_null())
+        return false;
+
+    return internal_types.find(data["attributes"]["transactionType"]) != internal_types.end();
 }
 
 bool UpService::SkipTransaction(const json& data)

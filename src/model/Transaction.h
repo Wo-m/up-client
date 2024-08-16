@@ -7,12 +7,12 @@
 #include <fmt/format.h>
 #include <model/Amount.h>
 #include <model/Tags.h>
-#include <sstream>
 #include <string>
 
+using TransactionId = uint64_t;
 struct Transaction
 {
-    // TODO: create new type so i don't have to wrap everything in to_dollars
+    TransactionId id;
     Amount amount;
     std::string description;
     std::string createdAt;
@@ -26,23 +26,11 @@ struct Transaction
 
     std::string summary() const
     {
-        return fmt::format("{:<20}{:<70}{:<40}{:<20}",
+        return fmt::format("{:<50}{:<20}{:<70}{:<40}{:<20}",
+                           fmt::format("id: {}", id),
                            fmt::format("amount: {:.2f}", amount),
                            fmt::format("description: {}", description),
                            fmt::format("createdAt: {}", createdAt),
                            fmt::format("tag: {}", to_string(tag)));
-    }
-
-    static Transaction csv_line_to_transaction(std::string line)
-    {
-        std::string amount, createdAt, description, tag;
-        std::istringstream iss(line);
-
-        std::getline(iss, amount, ',');
-        std::getline(iss, createdAt, ',');
-        std::getline(iss, description, ',');
-        std::getline(iss, tag, ',');
-
-        return { stoi(amount), description, createdAt, tag_from_string(tag) };
     }
 };

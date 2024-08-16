@@ -5,11 +5,8 @@
 #include "service/DateHelper.h"
 #include "service/Repository.h"
 #include <date/date.h>
-#include <exception>
 #include <fmt/core.h>
 #include <fstream>
-#include <ios>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <sqlite3.h>
@@ -17,6 +14,8 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+
+using namespace sqlite_orm;
 
 DataManager::DataManager()
 {
@@ -130,31 +129,36 @@ nlohmann::json getCategories()
 void DataManager::AddTransaction(Transaction& transaction)
 {
     auto storage = Repository::get_storage();
-    storage.replace(transaction);
+    storage.insert(transaction);
 }
 
 void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
 {
     auto storage = Repository::get_storage();
+    // TODO: would be good to make this configurable so can do test runs
+    // that dont effect the actual data
+    //storage.begin_transaction();
 
     // get all transactions that overlap with fetch, not including manual entries
-    auto db_transactions = FindTransactions(DateHelper::GetBackdate(), DateHelper::GetToday(), false, false);
+    auto earliest_transaction = DateHelper::RFCToYearMonthDay(transactions.back().createdAt);
+    auto db_transactions = FindTransactions(earliest_transaction, DateHelper::GetToday(), false, false);
+
+    if (db_transactions.empty())
+        return;
 
     // put transactions into ascending (oldest first)
     std::reverse(transactions.begin(), transactions.end());
 
-    // add all values to db (replaces existing)
-    // and create set of dates
+    // add all values to db and create set of dates
     std::unordered_set<std::string> dates;
     for (auto& t : transactions)
     {
-        // get ptr to matching transaction in db
         // only insert if its a new transaction
         // otherwise if we manually set tags they get overriden
         // (may want to rethink this if it becomes an issue)
-        auto t_ptr = storage.get_pointer<Transaction>(t.createdAt);
-        if (!t_ptr)
-            storage.replace(t);
+        auto t_with_date = storage.select(&Transaction::createdAt, where(c(&Transaction::createdAt) == t.createdAt));
+        if (t_with_date.empty())
+            storage.insert(t);
         dates.emplace(t.createdAt);
     }
 
@@ -163,7 +167,7 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
     {
         if (dates.find(t.createdAt) == dates.end())
         {
-            storage.remove<Transaction>(t.createdAt);
+            storage.remove<Transaction>(t.id);
             fmt::print("removing transaction: {}\n", t.summary());
         }
     }
@@ -193,8 +197,7 @@ std::vector<Transaction> DataManager::FindTransactions(const date::year_month_da
     return FindTransactions(since_rfc, to_rfc, print, include_manual);
 }
 
-std::vector<Transaction>
-DataManager::FindTransactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual)
+std::vector<Transaction> DataManager::FindTransactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual)
 {
     auto storage = Repository::get_storage();
 
@@ -218,48 +221,6 @@ DataManager::FindTransactions(const std::string& since_rfc, const std::string& t
     return transactions;
 }
 
-void create_db()
-{
-    sqlite3* db;
-
-    int rc = sqlite3_open("./info/up-client.db", &db);
-
-    std::string sql = "CREATE TABLE \"Transaction\"("
-                      "created_at text primary key, "
-                      "amount integer not null, "
-                      "description text not null, "
-                      "tag text not null, "
-                      "manual integer not null)";
-
-    fmt::print("{}\n", sql);
-    char* ptr = 0;
-    rc = sqlite3_exec(db, sql.c_str(), 0, 0, &ptr);
-
-    sqlite3_close(db);
-
-    std::ifstream csv;
-    csv.open("info/data.csv");
-    std::string line;
-
-    auto storage = Repository::get_storage();
-
-    Transaction t;
-    while (getline(csv, line))
-    {
-        t = Transaction::csv_line_to_transaction(line);
-
-        if (t.description == "vivcourt" || t.description == "rent" || t.description == "reimburse")
-            t.manual = true;
-        else
-            t.manual = false;
-
-        storage.replace(t);
-    }
-}
-
 void DataManager::AdHoc()
 {
-    create_db();
-    auto t = Repository::get_storage().get<Transaction>("2024-06-01T12:48:05+10:00");
-    fmt::print("{}\n", t.summary());
 }

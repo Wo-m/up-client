@@ -81,7 +81,7 @@ private:
         auto description = get_input("description");
         auto tag = tag_from_string(get_input("tag (empty for none)", "NONE"));
 
-        Transaction transaction({ (int)(stof(amount) * 100), description, DateHelper::ConvertToRFC(date), tag, true });
+        Transaction transaction({ 0, (int)(stof(amount) * 100), description, DateHelper::ConvertToRFC(date), tag, true });
 
         DataManager::AddTransaction(transaction);
     }
@@ -155,7 +155,7 @@ private:
 
         // auto add pay
         auto income_transactions =
-            storage.get_all<Transaction>(where(c(&Transaction::tag) == INCOME), order_by(&Transaction::createdAt));
+            storage.get_all<Transaction>(where(c(&Transaction::tag) == INCOME and c(&Transaction::description) == "vivcourt"), order_by(&Transaction::createdAt));
         auto last_pay_date = DateHelper::RFCToYearMonthDay(income_transactions.back().createdAt);
 
         if (last_pay_date + date::months(1) <= today)
@@ -165,10 +165,10 @@ private:
             assert(new_pay_date.day() == date::day(Config::pay_date));
             while (new_pay_date <= today) {
                 Transaction t{
-                    Config::pay_amount, "vivcourt", DateHelper::ConvertToRFC(new_pay_date), INCOME, true
+                    0, Config::pay_amount, "vivcourt", DateHelper::ConvertToRFC(new_pay_date), INCOME, true
                 };
                 fmt::print("{}\n", t.summary());
-                storage.replace(t);
+                storage.insert(t);
                 new_pay_date += date::months(1);
             }
         }
@@ -185,11 +185,11 @@ private:
             while (new_rent_date <= today)
             {
                 Transaction t{
-                    Config::rent_amount, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
+                    0, Config::rent_amount, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
                 };
 
                 fmt::print("{}\n", t.summary());
-                storage.replace(t);
+                storage.insert(t);
                 new_rent_date += date::days(Config::rent_cycle);
             }
         }
