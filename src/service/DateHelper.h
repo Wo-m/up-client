@@ -47,10 +47,10 @@ public:
         return DateHelper::RFCToYearMonthDay(stats["last_date"]);
     }
 
-    static date::year_month_day GetBackdate()
+    static date::year_month_day GetBackdate(date::year_month_day earliest_transaction_date = GetLastTransactionDate())
     {
-        auto last_date = GetLastTransactionDate();
-        auto backdate = date::year_month_day{ date::sys_days(last_date) - date::days(Config::backdated_fetch_days) };
+        // FIXME: use last non manual entry in db
+        auto backdate = date::year_month_day{ date::sys_days(earliest_transaction_date) - date::days(Config::backdated_fetch_days) };
         return backdate;
     }
 

@@ -4,12 +4,10 @@
 #include "model/Transaction.h"
 #include "service/DateHelper.h"
 #include "service/Repository.h"
+#include "service/UpService.h"
 #include <date/date.h>
-#include <exception>
 #include <fmt/core.h>
 #include <fstream>
-#include <ios>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <sqlite3.h>
@@ -17,6 +15,8 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+
+using namespace sqlite_orm;
 
 DataManager::DataManager()
 {
@@ -51,7 +51,7 @@ Stats DataManager::CalculateStats(std::vector<Transaction> transactions)
         expense += pair.second;
     }
 
-    return { income, expense, income + expense, transactions.at(transactions.size() - 1).createdAt, tag_to_amount };
+    return { income, expense, income + expense, transactions.at(transactions.size() - 1).created_at, tag_to_amount };
 }
 
 void DataManager::CalculateSaved(std::vector<Account> accounts)
@@ -130,47 +130,52 @@ nlohmann::json getCategories()
 void DataManager::AddTransaction(Transaction& transaction)
 {
     auto storage = Repository::get_storage();
-    storage.replace(transaction);
+    storage.insert(transaction);
 }
 
 void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
 {
     auto storage = Repository::get_storage();
+    // TODO: would be good to make this configurable so can do test runs
+    // that dont effect the actual data
+    //storage.begin_transaction();
 
     // get all transactions that overlap with fetch, not including manual entries
-    auto db_transactions = FindTransactions(DateHelper::GetBackdate(), DateHelper::GetToday(), false, false);
+    auto earliest_transaction = DateHelper::RFCToYearMonthDay(transactions.back().created_at);
+    auto db_transactions = FindTransactions(earliest_transaction, DateHelper::GetToday(), false, false);
+
+    if (db_transactions.empty())
+        return;
 
     // put transactions into ascending (oldest first)
     std::reverse(transactions.begin(), transactions.end());
 
-    // add all values to db (replaces existing)
-    // and create set of dates
-    std::unordered_set<std::string> dates;
+    // add all values to db and create set of dates
+    std::unordered_set<std::string> up_ids;
     for (auto& t : transactions)
     {
-        // get ptr to matching transaction in db
         // only insert if its a new transaction
         // otherwise if we manually set tags they get overriden
         // (may want to rethink this if it becomes an issue)
-        auto t_ptr = storage.get_pointer<Transaction>(t.createdAt);
-        if (!t_ptr)
-            storage.replace(t);
-        dates.emplace(t.createdAt);
+        auto matching_id = storage.select(&Transaction::up_id, where(c(&Transaction::up_id) == t.up_id));
+        if (matching_id.empty())
+            storage.insert(t);
+        up_ids.emplace(t.up_id);
     }
 
     // remove any values that aren't in set (usually card checks)
     for (auto& t : db_transactions)
     {
-        if (dates.find(t.createdAt) == dates.end())
+        if (up_ids.find(t.up_id) == up_ids.end())
         {
-            storage.remove<Transaction>(t.createdAt);
+            storage.remove<Transaction>(t.id);
             fmt::print("removing transaction: {}\n", t.summary());
         }
     }
 
     // we just use this to print
     auto to_rfc = DateHelper::ConvertToRFC(DateHelper::GetToday(), true);
-    auto new_transactions = FindTransactions(db_transactions.back().createdAt, to_rfc, false, true);
+    auto new_transactions = FindTransactions(db_transactions.back().created_at, to_rfc, false, true);
 
     if (new_transactions.size() > 1)
     {
@@ -180,7 +185,7 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
             fmt::print("{}\n", t.summary());
     }
 
-    update_info(transactions.back().createdAt);
+    update_info(transactions.back().created_at);
 }
 
 std::vector<Transaction> DataManager::FindTransactions(const date::year_month_day& since,
@@ -193,8 +198,7 @@ std::vector<Transaction> DataManager::FindTransactions(const date::year_month_da
     return FindTransactions(since_rfc, to_rfc, print, include_manual);
 }
 
-std::vector<Transaction>
-DataManager::FindTransactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual)
+std::vector<Transaction> DataManager::FindTransactions(const std::string& since_rfc, const std::string& to_rfc, bool print, bool include_manual)
 {
     auto storage = Repository::get_storage();
 
@@ -203,11 +207,11 @@ DataManager::FindTransactions(const std::string& since_rfc, const std::string& t
     // doesn't appear to be a way to prepare a statement and add to it without using strings
     // this is a bit cumbersome but don't what to muddle with strings
     auto transactions = (include_manual)
-                            ? storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc)),
-                                                           order_by(&Transaction::createdAt))
-                            : storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc) and
+                            ? storage.get_all<Transaction>(where(between(&Transaction::created_at, since_rfc, to_rfc)),
+                                                           order_by(&Transaction::created_at))
+                            : storage.get_all<Transaction>(where(between(&Transaction::created_at, since_rfc, to_rfc) and
                                                                  c(&Transaction::manual) == 0),
-                                                           order_by(&Transaction::createdAt));
+                                                           order_by(&Transaction::created_at));
 
     if (print)
     {
@@ -218,48 +222,19 @@ DataManager::FindTransactions(const std::string& since_rfc, const std::string& t
     return transactions;
 }
 
-void create_db()
-{
-    sqlite3* db;
-
-    int rc = sqlite3_open("./info/up-client.db", &db);
-
-    std::string sql = "CREATE TABLE \"Transaction\"("
-                      "created_at text primary key, "
-                      "amount integer not null, "
-                      "description text not null, "
-                      "tag text not null, "
-                      "manual integer not null)";
-
-    fmt::print("{}\n", sql);
-    char* ptr = 0;
-    rc = sqlite3_exec(db, sql.c_str(), 0, 0, &ptr);
-
-    sqlite3_close(db);
-
-    std::ifstream csv;
-    csv.open("info/data.csv");
-    std::string line;
-
-    auto storage = Repository::get_storage();
-
-    Transaction t;
-    while (getline(csv, line))
-    {
-        t = Transaction::csv_line_to_transaction(line);
-
-        if (t.description == "vivcourt" || t.description == "rent" || t.description == "reimburse")
-            t.manual = true;
-        else
-            t.manual = false;
-
-        storage.replace(t);
-    }
-}
-
 void DataManager::AdHoc()
 {
-    create_db();
-    auto t = Repository::get_storage().get<Transaction>("2024-06-01T12:48:05+10:00");
-    fmt::print("{}\n", t.summary());
+    UpService up;
+    auto transactions = up.GetTransactions(up.GetTransactionalAccount().id, DateHelper::ConvertToRFC(Config::begin));
+    auto storage = Repository::get_storage();
+
+    for (auto& t : transactions)
+    {
+        auto db_t = storage.get_all<Transaction>(where(c(&Transaction::created_at) == t.created_at));
+        if (db_t.empty())
+            continue;
+        db_t.front().up_id = t.up_id;
+        storage.update(db_t.front());
+    }
+
 }
