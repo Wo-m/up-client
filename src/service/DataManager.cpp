@@ -4,6 +4,7 @@
 #include "model/Transaction.h"
 #include "service/DateHelper.h"
 #include "service/Repository.h"
+#include "service/UpService.h"
 #include <date/date.h>
 #include <fmt/core.h>
 #include <fstream>
@@ -50,7 +51,7 @@ Stats DataManager::CalculateStats(std::vector<Transaction> transactions)
         expense += pair.second;
     }
 
-    return { income, expense, income + expense, transactions.at(transactions.size() - 1).createdAt, tag_to_amount };
+    return { income, expense, income + expense, transactions.at(transactions.size() - 1).created_at, tag_to_amount };
 }
 
 void DataManager::CalculateSaved(std::vector<Account> accounts)
@@ -140,7 +141,7 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
     //storage.begin_transaction();
 
     // get all transactions that overlap with fetch, not including manual entries
-    auto earliest_transaction = DateHelper::RFCToYearMonthDay(transactions.back().createdAt);
+    auto earliest_transaction = DateHelper::RFCToYearMonthDay(transactions.back().created_at);
     auto db_transactions = FindTransactions(earliest_transaction, DateHelper::GetToday(), false, false);
 
     if (db_transactions.empty())
@@ -150,22 +151,22 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
     std::reverse(transactions.begin(), transactions.end());
 
     // add all values to db and create set of dates
-    std::unordered_set<std::string> dates;
+    std::unordered_set<std::string> up_ids;
     for (auto& t : transactions)
     {
         // only insert if its a new transaction
         // otherwise if we manually set tags they get overriden
         // (may want to rethink this if it becomes an issue)
-        auto t_with_date = storage.select(&Transaction::createdAt, where(c(&Transaction::createdAt) == t.createdAt));
-        if (t_with_date.empty())
+        auto matching_id = storage.select(&Transaction::up_id, where(c(&Transaction::up_id) == t.up_id));
+        if (matching_id.empty())
             storage.insert(t);
-        dates.emplace(t.createdAt);
+        up_ids.emplace(t.up_id);
     }
 
     // remove any values that aren't in set (usually card checks)
     for (auto& t : db_transactions)
     {
-        if (dates.find(t.createdAt) == dates.end())
+        if (up_ids.find(t.up_id) == up_ids.end())
         {
             storage.remove<Transaction>(t.id);
             fmt::print("removing transaction: {}\n", t.summary());
@@ -174,7 +175,7 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
 
     // we just use this to print
     auto to_rfc = DateHelper::ConvertToRFC(DateHelper::GetToday(), true);
-    auto new_transactions = FindTransactions(db_transactions.back().createdAt, to_rfc, false, true);
+    auto new_transactions = FindTransactions(db_transactions.back().created_at, to_rfc, false, true);
 
     if (new_transactions.size() > 1)
     {
@@ -184,7 +185,7 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
             fmt::print("{}\n", t.summary());
     }
 
-    update_info(transactions.back().createdAt);
+    update_info(transactions.back().created_at);
 }
 
 std::vector<Transaction> DataManager::FindTransactions(const date::year_month_day& since,
@@ -206,11 +207,11 @@ std::vector<Transaction> DataManager::FindTransactions(const std::string& since_
     // doesn't appear to be a way to prepare a statement and add to it without using strings
     // this is a bit cumbersome but don't what to muddle with strings
     auto transactions = (include_manual)
-                            ? storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc)),
-                                                           order_by(&Transaction::createdAt))
-                            : storage.get_all<Transaction>(where(between(&Transaction::createdAt, since_rfc, to_rfc) and
+                            ? storage.get_all<Transaction>(where(between(&Transaction::created_at, since_rfc, to_rfc)),
+                                                           order_by(&Transaction::created_at))
+                            : storage.get_all<Transaction>(where(between(&Transaction::created_at, since_rfc, to_rfc) and
                                                                  c(&Transaction::manual) == 0),
-                                                           order_by(&Transaction::createdAt));
+                                                           order_by(&Transaction::created_at));
 
     if (print)
     {
@@ -223,4 +224,17 @@ std::vector<Transaction> DataManager::FindTransactions(const std::string& since_
 
 void DataManager::AdHoc()
 {
+    UpService up;
+    auto transactions = up.GetTransactions(up.GetTransactionalAccount().id, DateHelper::ConvertToRFC(Config::begin));
+    auto storage = Repository::get_storage();
+
+    for (auto& t : transactions)
+    {
+        auto db_t = storage.get_all<Transaction>(where(c(&Transaction::created_at) == t.created_at));
+        if (db_t.empty())
+            continue;
+        db_t.front().up_id = t.up_id;
+        storage.update(db_t.front());
+    }
+
 }
