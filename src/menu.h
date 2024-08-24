@@ -174,23 +174,25 @@ private:
         }
 
         // auto add rent
-        auto rent_transactions = storage.get_all<Transaction>(where(c(&Transaction::description) == "rent"),
-                                                              order_by(&Transaction::createdAt));
-        auto last_rent_date = date::sys_days(DateHelper::RFCToYearMonthDay(rent_transactions.back().createdAt));
+        if (Config::rent_amount != 0) {
+            auto rent_transactions = storage.get_all<Transaction>(where(c(&Transaction::description) == "rent"),
+                                                                  order_by(&Transaction::createdAt));
+            auto last_rent_date = date::sys_days(DateHelper::RFCToYearMonthDay(rent_transactions.back().createdAt));
 
-        if ((last_rent_date + date::days(Config::rent_cycle)) <= today)
-        {
-            fmt::print("auto adding rent:\n");
-            auto new_rent_date = last_rent_date + date::days(Config::rent_cycle);
-            while (new_rent_date <= today)
+            if ((last_rent_date + date::days(Config::rent_cycle)) <= today)
             {
-                Transaction t{
-                    0, Config::rent_amount, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
-                };
+                fmt::print("auto adding rent:\n");
+                auto new_rent_date = last_rent_date + date::days(Config::rent_cycle);
+                while (new_rent_date <= today)
+                {
+                    Transaction t{
+                        0, Config::rent_amount, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
+                    };
 
-                fmt::print("{}\n", t.summary());
-                storage.insert(t);
-                new_rent_date += date::days(Config::rent_cycle);
+                    fmt::print("{}\n", t.summary());
+                    storage.insert(t);
+                    new_rent_date += date::days(Config::rent_cycle);
+                }
             }
         }
     }
