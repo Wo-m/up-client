@@ -74,6 +74,9 @@ vector<Transaction> UpService::GetTransactions(const string& accountId, const st
 
     vector<Transaction> transactions = MapTransactions(transactionsData);
 
+    // put transactions into ascending (oldest first)
+    std::reverse(transactions.begin(), transactions.end());
+
     return transactions;
 }
 

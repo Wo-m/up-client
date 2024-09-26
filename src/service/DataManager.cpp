@@ -54,25 +54,6 @@ Stats DataManager::CalculateStats(std::vector<Transaction> transactions)
     return { income, expense, income + expense, transactions.at(transactions.size() - 1).created_at, tag_to_amount };
 }
 
-void DataManager::CalculateSaved(std::vector<Account> accounts)
-{
-    Amount up = 0;
-    Amount anz = Config::start_balance;
-
-    for (auto& a : accounts)
-    {
-        up += (int)(a.balance * 100);
-    }
-
-    auto stats =
-        CalculateStats(FindTransactions(DateHelper::ToYearMonthDay(Config::begin), DateHelper::GetToday(), false));
-
-    anz += stats.income + stats.expense - up;
-
-    fmt::print(
-        "anz/savings {:.2f} | up {:.2f} | income {:.2f} | expense {:.2f}\n\n", anz, up, stats.income, stats.expense);
-}
-
 void DataManager::GenerateSnapshots(int choice, bool show_transactions)
 {
     std::vector<date::year_month_day> dates;
@@ -133,22 +114,27 @@ void DataManager::AddTransaction(Transaction& transaction)
     storage.insert(transaction);
 }
 
-void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
+void DataManager::UpdateTransactions(bool dry_run)
 {
     auto storage = Repository::get_storage();
-    // TODO: would be good to make this configurable so can do test runs
-    // that dont effect the actual data
-    //storage.begin_transaction();
+
+    // testing mode, doesn't actually write anything to db
+    if (dry_run)
+        storage.begin_transaction();
+
+    auto transactions = up_service_.FindNewTransactions();
+    if (transactions.empty())
+    {
+        fmt::print("no new transactions\n");
+        return;
+    }
 
     // get all transactions that overlap with fetch, not including manual entries
-    auto earliest_transaction = DateHelper::RFCToYearMonthDay(transactions.back().created_at);
-    auto db_transactions = FindTransactions(earliest_transaction, DateHelper::GetToday(), false, false);
+    auto earliest_transaction_date = DateHelper::RFCToYearMonthDay(transactions.front().created_at);
+    auto db_transactions = FindTransactions(earliest_transaction_date, DateHelper::GetToday(), false, false);
 
     if (db_transactions.empty())
         return;
-
-    // put transactions into ascending (oldest first)
-    std::reverse(transactions.begin(), transactions.end());
 
     // add all values to db and create set of dates
     std::unordered_set<std::string> up_ids;

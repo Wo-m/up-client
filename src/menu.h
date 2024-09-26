@@ -24,11 +24,10 @@ public:
         string input;
         while (1)
         {
-            input = get_input(fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n",
+            input = get_input(fmt::format("{}\n{}\n{}\n{}\n{}\n",
                        "1: add new transactions",
                        "2: list transactions",
                        "3: snapshots",
-                       "4: savings",
                        "-1: AdHoc",
                        "0: quit"));
 
@@ -48,9 +47,6 @@ public:
                 case 3:
                     snapshot_menu();
                     break;
-                case 4:
-                    savings();
-                    break;
                 default:
                     fmt::print("not an option, try again\n");
             }
@@ -59,7 +55,7 @@ public:
     }
 
 private:
-    UpService upService;
+    DataManager data_manager_;
 
     string get_input(std::string question, std::string default_choice = "")
     {
@@ -85,22 +81,9 @@ private:
         DataManager::AddTransaction(transaction);
     }
 
-    void savings()
-    {
-        auto accounts = upService.GetAccounts();
-        DataManager::CalculateSaved(accounts);
-    }
-
     void find_new_transactions()
     {
-        auto transactions = upService.FindNewTransactions();
-        if (transactions.empty())
-        {
-            fmt::print("no new transactions\n");
-            return;
-        }
-
-        DataManager::UpdateTransactions(transactions);
+        data_manager_.UpdateTransactions(false);
     }
 
     void snapshot_menu()
