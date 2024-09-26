@@ -69,6 +69,17 @@ private:
         return input;
     }
 
+
+    void start_up()
+    {
+        find_new_transactions();
+    }
+
+    void find_new_transactions()
+    {
+        data_manager_.UpdateTransactions(false);
+    }
+
     void add_new_transaction()
     {
         auto date = DateHelper::ToYearMonthDay(get_input("date (dd/mm/yy) (empty for today)", DateHelper::ToStringDDMMYY(DateHelper::GetToday())));
@@ -79,20 +90,6 @@ private:
         Transaction transaction({ 0, "", (int)(stof(amount) * 100), description, DateHelper::ConvertToRFC(date), tag, true });
 
         DataManager::AddTransaction(transaction);
-    }
-
-    void find_new_transactions()
-    {
-        data_manager_.UpdateTransactions(false);
-    }
-
-    void snapshot_menu()
-    {
-        string choice =
-            get_input(fmt::format("please pick an option:\n{}\n{}\n", "1: weekly", "2: pay cycle", "0: back"));
-        string show = get_input(fmt::format("show transactions?:\n{}\n{}\n", "0: no", "1: yes"));
-
-        DataManager::GenerateSnapshots(stoi(choice), stoi(show));
     }
 
     void list_transactions()
@@ -127,8 +124,12 @@ private:
         fmt::print("{}\n", stats.summary());
     }
 
-    void start_up()
+    void snapshot_menu()
     {
-        find_new_transactions();
+        string choice =
+            get_input(fmt::format("please pick an option:\n{}\n{}\n", "1: weekly", "2: pay cycle", "0: back"));
+        string show = get_input(fmt::format("show transactions?:\n{}\n{}\n", "0: no", "1: yes"));
+
+        DataManager::GenerateSnapshots(stoi(choice), stoi(show));
     }
 };
