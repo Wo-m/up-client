@@ -26,8 +26,7 @@ public:
         {
             input = get_input(fmt::format("{}\n{}\n{}\n{}\n{}\n",
                        "1: add new transactions",
-                       "2: list transactions",
-                       "3: snapshots",
+                       "2: snapshots",
                        "-1: AdHoc",
                        "0: quit"));
 
@@ -42,9 +41,6 @@ public:
                     add_new_transaction();
                     break;
                 case 2:
-                    list_transactions();
-                    break;
-                case 3:
                     snapshot_menu();
                     break;
                 default:
@@ -69,7 +65,6 @@ private:
         return input;
     }
 
-
     void start_up()
     {
         find_new_transactions();
@@ -90,38 +85,6 @@ private:
         Transaction transaction({ 0, "", (int)(stof(amount) * 100), description, DateHelper::ConvertToRFC(date), tag, true });
 
         DataManager::AddTransaction(transaction);
-    }
-
-    void list_transactions()
-    {
-        string choice = get_input(fmt::format("please pick an option:\n{}\n{}\n{}\n{}\n",
-                                              "1: all",
-                                              "2: week (starting mon)",
-                                              "3: last pay",
-                                              "4: specific"));
-
-        date::year_month_day date;
-        switch (stoi(choice))
-        {
-            case 1:
-                date = DateHelper::ToYearMonthDay(Config::begin);
-                break;
-            case 2:
-                date = DateHelper::GetLastMonday();
-                break;
-            case 3:
-                date = DateHelper::GetLastPay();
-                break;
-            case 4:
-                date = DateHelper::ToYearMonthDay(get_input("please enter a date (dd/mm/yy)"));
-                break;
-        }
-
-        auto today = DateHelper::GetToday();
-        auto transactions = DataManager::FindTransactions(date, today, true);
-        auto stats = DataManager::CalculateStats(transactions);
-
-        fmt::print("{}\n", stats.summary());
     }
 
     void snapshot_menu()
