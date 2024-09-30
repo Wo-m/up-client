@@ -12,7 +12,7 @@
 
 using namespace std;
 
-vclass Menu
+class Menu
 {
 public:
     void main()
@@ -81,10 +81,26 @@ private:
 
     void Snapshots()
     {
+        // TODO: enum
         string choice =
             GetInput(fmt::format("please pick an option:\n{}\n{}\n", "1: weekly", "2: pay cycle", "0: back"));
         string show = GetInput(fmt::format("show transactions?:\n{}\n{}\n", "0: no", "1: yes"));
 
-        DataManager::GenerateSnapshots(stoi(choice), stoi(show));
+        auto snapshots = DataManager::GenerateSnapshots(stoi(choice));
+
+        for (auto& snapshot : snapshots)
+        {
+            fmt::print("----- start: {} -------\n", DateHelper::ToStringDDMMYY(snapshot.since));
+
+            // print transactions
+            if (stoi(show))
+            {
+                for (auto& t : snapshot.transactions)
+                    fmt::print("{}\n", t.summary());
+            }
+
+            fmt::print("{}-----------------------------\n", snapshot.stats.summary());
+
+        }
     }
 };

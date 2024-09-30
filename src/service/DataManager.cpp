@@ -51,10 +51,10 @@ Stats DataManager::CalculateStats(std::vector<Transaction> transactions)
         expense += pair.second;
     }
 
-    return { income, expense, income + expense, transactions.at(transactions.size() - 1).created_at, tag_to_amount };
+    return { income, expense, income + expense, transactions.back().created_at, tag_to_amount };
 }
 
-void DataManager::GenerateSnapshots(int choice, bool show_transactions)
+std::vector<Snapshot> DataManager::GenerateSnapshots(int choice)
 {
     std::vector<date::year_month_day> dates;
     switch (choice)
@@ -79,27 +79,22 @@ void DataManager::GenerateSnapshots(int choice, bool show_transactions)
     }
 
     std::vector<Transaction> transactions;
+    std::vector<Snapshot> snaphots;
     Stats stats;
-    auto today = DateHelper::GetToday();
-    for (int i = 1; i <= dates.size(); i++)
+    dates.emplace_back(DateHelper::GetToday());
+    for (int i = 1; i < dates.size(); i++)
     {
         auto since = dates.at(i - 1);
-        if (i == dates.size())
-        {
-            transactions = FindTransactions(since, today, show_transactions);
-        }
-        else
-        {
-            auto to = date::year_month_day{ date::sys_days(dates.at(i)) - date::days(1) };
-            transactions = FindTransactions(since, to, show_transactions);
-        }
+        auto to = date::year_month_day{ date::sys_days(dates.at(i)) - date::days(1) };
+
+        transactions = FindTransactions(since, to, false);
         if (transactions.size() == 0)
             continue;
+
         stats = CalculateStats(transactions);
-        fmt::print("----- start: {} -------\n{}-----------------------------\n",
-                   DateHelper::ToStringDDMMYY(since),
-                   stats.summary());
+        snaphots.push_back({since, to, transactions, stats});
     }
+    return snaphots;
 }
 
 nlohmann::json getCategories()
