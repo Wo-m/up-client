@@ -8,7 +8,6 @@
 #include <cpr/curl_container.h>
 #include <cpr/parameters.h>
 #include <cstdio>
-#include <exception>
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
@@ -26,21 +25,11 @@ using namespace nlohmann;
 UpService::UpService()
 {
     // build ignore set
-    std::ifstream ignore_csv;
-    ignore_csv.open("info/ignore.csv");
-
-    std::string line;
-    while (!ignore_csv.eof())
+    std::ifstream ignore_stream("info/ignore.json");
+    auto ignore_json = nlohmann::json::parse(ignore_stream);
+    for (auto& item : ignore_json["ignore"])
     {
-        getline(ignore_csv, line);
-        try
-        {
-            ignore_descriptions_.insert(line);
-        }
-        catch (exception e)
-        {
-            // eof
-        }
+        ignore_descriptions_.insert(item);
     }
 
     // build tag map
