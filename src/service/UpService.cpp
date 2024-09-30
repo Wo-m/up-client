@@ -42,14 +42,15 @@ UpService::UpService()
             tags_[entry["desc"]] = make_pair(tag_from_string(t.key()), entry["amount"]);
         }
     }
+
+    account_ = GetTransactionalAccount();
 }
 
-vector<Transaction> UpService::FindNewTransactions()
+vector<Transaction> UpService::FindNewTransactions(date::year_month_day last_transaction_date)
 {
-    auto account = GetTransactionalAccount();
-    auto last_date = DateHelper::GetBackdate();
-    string last_date_rfc = DateHelper::ConvertToRFC(last_date);
-    return GetTransactions(account.id, last_date_rfc);
+    auto last_date = DateHelper::GetBackdate(last_transaction_date);
+    auto last_date_rfc = DateHelper::ConvertToRFC(last_date);
+    return GetTransactions(account_.id, last_date_rfc);
 }
 
 vector<Transaction> UpService::GetTransactions(const string& accountId, const string& since_)

@@ -10,7 +10,7 @@
 class DataManager
 {
 public:
-    DataManager();
+    DataManager() = default;
     static Stats CalculateStats(std::vector<Transaction> transactions);
     static std::vector<Snapshot> GenerateSnapshots(int choice);
 

@@ -18,20 +18,6 @@
 
 using namespace sqlite_orm;
 
-DataManager::DataManager()
-{
-}
-
-void update_info(std::string date)
-{
-    auto json = nlohmann::json();
-    json["last_date"] = date;
-    std::ofstream file;
-    file.open("info/info.json");
-    file << json;
-    file.close();
-}
-
 Stats DataManager::CalculateStats(std::vector<Transaction> transactions)
 {
     auto tag_to_amount = std::map<Tag, Amount>();
@@ -117,7 +103,8 @@ void DataManager::UpdateTransactions(bool dry_run)
     if (dry_run)
         storage.begin_transaction();
 
-    auto transactions = up_service_.FindNewTransactions();
+    auto last_transaction = storage.get_all<Transaction>(where(c(&Transaction::manual) == 0), order_by(&Transaction::created_at).desc(), limit(1));
+    auto transactions = up_service_.FindNewTransactions(DateHelper::RFCToYearMonthDay(last_transaction.begin()->created_at));
     if (transactions.empty())
     {
         fmt::print("no new transactions\n");
@@ -165,8 +152,6 @@ void DataManager::UpdateTransactions(bool dry_run)
         for (auto& t : new_transactions)
             fmt::print("{}\n", t.summary());
     }
-
-    update_info(transactions.back().created_at);
 }
 
 std::vector<Transaction> DataManager::FindTransactions(const date::year_month_day& since,

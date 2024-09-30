@@ -40,17 +40,9 @@ public:
         return date::year_month_day{ last_pay };
     }
 
-    static date::year_month_day GetLastTransactionDate()
+    static date::year_month_day GetBackdate(date::year_month_day last_transaction_date)
     {
-        ifstream last_date("info/info.json");
-        auto stats = nlohmann::json::parse(last_date);
-        return DateHelper::RFCToYearMonthDay(stats["last_date"]);
-    }
-
-    static date::year_month_day GetBackdate(date::year_month_day earliest_transaction_date = GetLastTransactionDate())
-    {
-        // FIXME: use last non manual entry in db
-        auto backdate = date::year_month_day{ date::sys_days(earliest_transaction_date) - date::days(Config::backdated_fetch_days) };
+        auto backdate = date::year_month_day{ date::sys_days(last_transaction_date) - date::days(Config::backdated_fetch_days) };
         return backdate;
     }
 
