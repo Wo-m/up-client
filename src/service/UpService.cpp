@@ -25,7 +25,6 @@ using namespace nlohmann;
 
 UpService::UpService()
 {
-    // TODO: Move to DataManager static
     // build ignore set
     std::ifstream ignore_csv;
     ignore_csv.open("info/ignore.csv");
@@ -36,7 +35,7 @@ UpService::UpService()
         getline(ignore_csv, line);
         try
         {
-            ignore.insert(line);
+            ignore_descriptions_.insert(line);
         }
         catch (exception e)
         {
@@ -51,7 +50,7 @@ UpService::UpService()
     {
         for (auto entry : t.value())
         {
-            tag[entry["desc"]] = make_pair(tag_from_string(t.key()), entry["amount"]);
+            tags_[entry["desc"]] = make_pair(tag_from_string(t.key()), entry["amount"]);
         }
     }
 }
@@ -191,31 +190,21 @@ bool IsInternalTransfer(const json& data)
 
 bool UpService::SkipTransaction(const json& data)
 {
-    return ignore.find(data["attributes"]["description"]) != ignore.end() || IsInternalTransfer(data);
+    return ignore_descriptions_.find(data["attributes"]["description"]) != ignore_descriptions_.end() || IsInternalTransfer(data);
 }
 
 Tag UpService::MapTag(std::string desc, std::string amount)
 {
-    std::pair<Tag, std::string> pair;
-    try
-    {
-        pair = tag.at(desc);
-    }
-    catch (exception e)
-    {
-        // no matching tag for desc, check if we can apply big tag
-        // negative values, so less than
-        if (stoi(amount) < Config::big_amount)
-        {
-            return BIG;
-        }
-    }
+    auto map_pair = tags_.find(desc);
+    if (map_pair == tags_.end())
+        return NONE;
 
+    auto tag_pair = map_pair->second;
     // either we have an exact match for the amount expected,
     // or the tag is applied to all transactions from merchant
     // regardless of amount
-    if (pair.second == amount || pair.second == "0")
-        return pair.first;
+    if (tag_pair.second == amount || tag_pair.second == "0")
+        return tag_pair.first;
 
     return NONE;
 }

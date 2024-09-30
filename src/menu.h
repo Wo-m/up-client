@@ -21,7 +21,7 @@ public:
         string input;
         while (1)
         {
-            input = GetInput(fmt::format("{}\n{}\n{}\n{}\n{}\n",
+            input = GetInput(fmt::format("{}\n{}\n{}\n{}\n",
                        "1: add new transactions",
                        "2: snapshots",
                        "-1: AdHoc",

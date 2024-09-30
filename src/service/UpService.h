@@ -39,8 +39,8 @@ private:
     std::vector<Transaction> MapTransactions(const nlohmann::json& transactionsData);
 
     // Member vars
-    std::set<std::string> ignore;                              // descriptions to ignore
-    std::map<std::string, std::pair<Tag, std::string>> tag;    // description to tag/price
+    std::set<std::string> ignore_descriptions_;                              // descriptions to ignore
+    std::map<std::string, std::pair<Tag, std::string>> tags_;    // description to tag/price
 
     // CONSTANTS
     cpr::Parameter PAGE_SIZE = cpr::Parameter{ "page[size]", "100" };
