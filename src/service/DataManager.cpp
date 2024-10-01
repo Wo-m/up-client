@@ -7,7 +7,6 @@
 #include "service/UpService.h"
 #include <date/date.h>
 #include <fmt/core.h>
-#include <fstream>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <sqlite3.h>
@@ -81,12 +80,6 @@ std::vector<Snapshot> DataManager::GenerateSnapshots(int choice)
         snaphots.push_back({since, to, transactions, stats});
     }
     return snaphots;
-}
-
-nlohmann::json getCategories()
-{
-    std::ifstream ifs("info/categories.json");
-    return nlohmann::json::parse(ifs);
 }
 
 void DataManager::AddTransaction(Transaction& transaction)

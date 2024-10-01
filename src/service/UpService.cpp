@@ -24,17 +24,21 @@ using namespace nlohmann;
 
 UpService::UpService()
 {
+    const static auto PATH = "info/info.json";
+    std::ifstream info_stream(PATH);
+    auto info = nlohmann::json::parse(info_stream);
+
     // build ignore set
-    std::ifstream ignore_stream("info/ignore.json");
-    auto ignore_json = nlohmann::json::parse(ignore_stream);
-    for (auto& item : ignore_json["ignore"])
+    const static auto IGNORE = "ignore";
+    auto ignore_json = info[IGNORE];
+    for (auto& item : ignore_json)
     {
         ignore_descriptions_.insert(item);
     }
 
     // build tag map
-    std::ifstream stream("info/tag.json");
-    auto tag_json = nlohmann::json::parse(stream);
+    const static auto TAGS = "tags";
+    auto tag_json = info[TAGS];
     for (auto t : tag_json.items())
     {
         for (auto entry : t.value())
@@ -71,7 +75,6 @@ vector<Transaction> UpService::GetTransactions(const string& accountId, const st
 
 vector<Account> UpService::GetAccounts()
 {
-    // TODO Cache
     json data = this->Get("accounts", {});
 
     vector<Account> accounts;
@@ -89,10 +92,6 @@ vector<Account> UpService::GetAccounts()
     return accounts;
 }
 
-/**
- * Get Transactional Account
- * @return
- */
 Account UpService::GetTransactionalAccount()
 {
     auto accounts = GetAccounts();
@@ -100,13 +99,6 @@ Account UpService::GetTransactionalAccount()
     return *account;
 }
 
-// private ------------------------------
-/**
- * Get request that supports paged responses
- * @param path
- * @param params
- * @return
- */
 json UpService::GetPaged(const std::string& path, const cpr::Parameters& params)
 {
     Response r = cpr::Get(Url{ UP_API + path }, BEARER, params);
