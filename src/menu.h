@@ -1,12 +1,9 @@
 
 #pragma once
-#include "config/Config.h"
 #include "model/Tags.h"
 #include "model/Transaction.h"
 #include "service/DataManager.h"
 #include "service/DateHelper.h"
-#include "service/Repository.h"
-#include "service/UpService.h"
 #include <date/date.h>
 #include <fmt/core.h>
 #include <iostream>
@@ -20,16 +17,13 @@ class Menu
 public:
     void main()
     {
-        // do this on boot
-        start_up();
+        StartUp();
         string input;
         while (1)
         {
-            input = get_input(fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n",
+            input = GetInput(fmt::format("{}\n{}\n{}\n{}\n",
                        "1: add new transactions",
-                       "2: list transactions",
-                       "3: snapshots",
-                       "4: savings",
+                       "2: snapshots",
                        "-1: AdHoc",
                        "0: quit"));
 
@@ -41,16 +35,10 @@ public:
                     DataManager::AdHoc();
                     break;
                 case 1:
-                    add_new_transaction();
+                    AddTransaction();
                     break;
                 case 2:
-                    list_transactions();
-                    break;
-                case 3:
-                    snapshot_menu();
-                    break;
-                case 4:
-                    savings();
+                    Snapshots();
                     break;
                 default:
                     fmt::print("not an option, try again\n");
@@ -60,9 +48,9 @@ public:
     }
 
 private:
-    UpService upService;
+    DataManager data_manager_;
 
-    string get_input(std::string question, std::string default_choice = "")
+    string GetInput(std::string question, std::string default_choice = "")
     {
         fmt::print("{}\n", question);
         string input;
@@ -74,126 +62,45 @@ private:
         return input;
     }
 
-    void add_new_transaction()
+    void StartUp()
     {
-        auto date = DateHelper::ToYearMonthDay(get_input("date (dd/mm/yy) (empty for today)", DateHelper::ToStringDDMMYY(DateHelper::GetToday())));
-        auto amount = get_input("amount (in dollars: 100.00 -> $100)");
-        auto description = get_input("description");
-        auto tag = tag_from_string(get_input("tag (empty for none)", "NONE"));
+        data_manager_.UpdateTransactions(false);
+    }
+
+    void AddTransaction()
+    {
+        auto date = DateHelper::ToYearMonthDay(GetInput("date (dd/mm/yy) (empty for today)", DateHelper::ToStringDDMMYY(DateHelper::GetToday())));
+        auto amount = GetInput("amount (in cents: 10000 -> $100.00)");
+        auto description = GetInput("description");
+        auto tag = tag_from_string(GetInput("tag (empty for none)", "NONE"));
 
         Transaction transaction({ 0, "", (int)(stof(amount) * 100), description, DateHelper::ConvertToRFC(date), tag, true });
 
         DataManager::AddTransaction(transaction);
     }
 
-    void savings()
+    void Snapshots()
     {
-        auto accounts = upService.GetAccounts();
-        DataManager::CalculateSaved(accounts);
-    }
-
-    void find_new_transactions()
-    {
-        auto transactions = upService.FindNewTransactions();
-        if (transactions.empty())
-        {
-            fmt::print("no new transactions\n");
-            return;
-        }
-
-        DataManager::UpdateTransactions(transactions);
-    }
-
-    void snapshot_menu()
-    {
+        // TODO: enum
         string choice =
-            get_input(fmt::format("please pick an option:\n{}\n{}\n", "1: weekly", "2: pay cycle", "0: back"));
-        string show = get_input(fmt::format("show transactions?:\n{}\n{}\n", "0: no", "1: yes"));
+            GetInput(fmt::format("please pick an option:\n{}\n{}\n", "1: weekly", "2: pay cycle", "0: back"));
+        string show = GetInput(fmt::format("show transactions?:\n{}\n{}\n", "0: no", "1: yes"));
 
-        DataManager::GenerateSnapshots(stoi(choice), stoi(show));
-    }
+        auto snapshots = DataManager::GenerateSnapshots(stoi(choice));
 
-    void list_transactions()
-    {
-        string choice = get_input(fmt::format("please pick an option:\n{}\n{}\n{}\n{}\n",
-                                              "1: all",
-                                              "2: week (starting mon)",
-                                              "3: last pay",
-                                              "4: specific"));
-
-        date::year_month_day date;
-        switch (stoi(choice))
+        for (auto& snapshot : snapshots)
         {
-            case 1:
-                date = DateHelper::ToYearMonthDay(Config::begin);
-                break;
-            case 2:
-                date = DateHelper::GetLastMonday();
-                break;
-            case 3:
-                date = DateHelper::GetLastPay();
-                break;
-            case 4:
-                date = DateHelper::ToYearMonthDay(get_input("please enter a date (dd/mm/yy)"));
-                break;
-        }
+            fmt::print("----- start: {} -------\n", DateHelper::ToStringDDMMYY(snapshot.since));
 
-        auto today = DateHelper::GetToday();
-        auto transactions = DataManager::FindTransactions(date, today, true);
-        auto stats = DataManager::CalculateStats(transactions);
-
-        fmt::print("{}\n", stats.summary());
-    }
-
-    void start_up()
-    {
-        find_new_transactions();
-
-        using namespace sqlite_orm;
-        auto storage = Repository::get_storage();
-        auto today = date::sys_days(DateHelper::GetToday());
-
-        // auto add pay
-        auto income_transactions =
-            storage.get_all<Transaction>(where(c(&Transaction::tag) == INCOME and c(&Transaction::description) == "vivcourt"), order_by(&Transaction::created_at));
-        auto last_pay_date = DateHelper::RFCToYearMonthDay(income_transactions.back().created_at);
-
-        if (last_pay_date + date::months(1) <= today)
-        {
-            fmt::print("auto adding pay:\n");
-            auto new_pay_date = last_pay_date + date::months(1);
-            assert(new_pay_date.day() == date::day(Config::pay_date));
-            while (new_pay_date <= today) {
-                Transaction t{
-                    0, "", Config::pay_amount, "vivcourt", DateHelper::ConvertToRFC(new_pay_date), INCOME, true
-                };
-                fmt::print("{}\n", t.summary());
-                storage.insert(t);
-                new_pay_date += date::months(1);
-            }
-        }
-
-        // auto add rent
-        if (Config::rent_amount != 0) {
-            auto rent_transactions = storage.get_all<Transaction>(where(c(&Transaction::description) == "rent"),
-                                                                  order_by(&Transaction::created_at));
-            auto last_rent_date = date::sys_days(DateHelper::RFCToYearMonthDay(rent_transactions.back().created_at));
-
-            if ((last_rent_date + date::days(Config::rent_cycle)) <= today)
+            // print transactions
+            if (stoi(show))
             {
-                fmt::print("auto adding rent:\n");
-                auto new_rent_date = last_rent_date + date::days(Config::rent_cycle);
-                while (new_rent_date <= today)
-                {
-                    Transaction t{
-                        0, "", Config::rent_amount, "rent", DateHelper::ConvertToRFC(date::year_month_day{ new_rent_date }), EXPECTED, true
-                    };
-
+                for (auto& t : snapshot.transactions)
                     fmt::print("{}\n", t.summary());
-                    storage.insert(t);
-                    new_rent_date += date::days(Config::rent_cycle);
-                }
             }
+
+            fmt::print("{}-----------------------------\n", snapshot.stats.summary());
+
         }
     }
 };

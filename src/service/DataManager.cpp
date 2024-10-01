@@ -7,7 +7,6 @@
 #include "service/UpService.h"
 #include <date/date.h>
 #include <fmt/core.h>
-#include <fstream>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <sqlite3.h>
@@ -17,20 +16,6 @@
 #include <vector>
 
 using namespace sqlite_orm;
-
-DataManager::DataManager()
-{
-}
-
-void update_info(std::string date)
-{
-    auto json = nlohmann::json();
-    json["last_date"] = date;
-    std::ofstream file;
-    file.open("info/info.json");
-    file << json;
-    file.close();
-}
 
 Stats DataManager::CalculateStats(std::vector<Transaction> transactions)
 {
@@ -51,29 +36,10 @@ Stats DataManager::CalculateStats(std::vector<Transaction> transactions)
         expense += pair.second;
     }
 
-    return { income, expense, income + expense, transactions.at(transactions.size() - 1).created_at, tag_to_amount };
+    return { income, expense, income + expense, transactions.back().created_at, tag_to_amount };
 }
 
-void DataManager::CalculateSaved(std::vector<Account> accounts)
-{
-    Amount up = 0;
-    Amount anz = Config::start_balance;
-
-    for (auto& a : accounts)
-    {
-        up += (int)(a.balance * 100);
-    }
-
-    auto stats =
-        CalculateStats(FindTransactions(DateHelper::ToYearMonthDay(Config::begin), DateHelper::GetToday(), false));
-
-    anz += stats.income + stats.expense - up;
-
-    fmt::print(
-        "anz/savings {:.2f} | up {:.2f} | income {:.2f} | expense {:.2f}\n\n", anz, up, stats.income, stats.expense);
-}
-
-void DataManager::GenerateSnapshots(int choice, bool show_transactions)
+std::vector<Snapshot> DataManager::GenerateSnapshots(int choice)
 {
     std::vector<date::year_month_day> dates;
     switch (choice)
@@ -98,33 +64,22 @@ void DataManager::GenerateSnapshots(int choice, bool show_transactions)
     }
 
     std::vector<Transaction> transactions;
+    std::vector<Snapshot> snaphots;
     Stats stats;
-    auto today = DateHelper::GetToday();
-    for (int i = 1; i <= dates.size(); i++)
+    dates.emplace_back(DateHelper::GetToday());
+    for (int i = 1; i < dates.size(); i++)
     {
         auto since = dates.at(i - 1);
-        if (i == dates.size())
-        {
-            transactions = FindTransactions(since, today, show_transactions);
-        }
-        else
-        {
-            auto to = date::year_month_day{ date::sys_days(dates.at(i)) - date::days(1) };
-            transactions = FindTransactions(since, to, show_transactions);
-        }
+        auto to = date::year_month_day{ date::sys_days(dates.at(i)) - date::days(1) };
+
+        transactions = FindTransactions(since, to, false);
         if (transactions.size() == 0)
             continue;
-        stats = CalculateStats(transactions);
-        fmt::print("----- start: {} -------\n{}-----------------------------\n",
-                   DateHelper::ToStringDDMMYY(since),
-                   stats.summary());
-    }
-}
 
-nlohmann::json getCategories()
-{
-    std::ifstream ifs("info/categories.json");
-    return nlohmann::json::parse(ifs);
+        stats = CalculateStats(transactions);
+        snaphots.push_back({since, to, transactions, stats});
+    }
+    return snaphots;
 }
 
 void DataManager::AddTransaction(Transaction& transaction)
@@ -133,22 +88,28 @@ void DataManager::AddTransaction(Transaction& transaction)
     storage.insert(transaction);
 }
 
-void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
+void DataManager::UpdateTransactions(bool dry_run)
 {
     auto storage = Repository::get_storage();
-    // TODO: would be good to make this configurable so can do test runs
-    // that dont effect the actual data
-    //storage.begin_transaction();
+
+    // testing mode, doesn't actually write anything to db
+    if (dry_run)
+        storage.begin_transaction();
+
+    auto last_transaction = storage.get_all<Transaction>(where(c(&Transaction::manual) == 0), order_by(&Transaction::created_at).desc(), limit(1));
+    auto transactions = up_service_.FindNewTransactions(DateHelper::RFCToYearMonthDay(last_transaction.begin()->created_at));
+    if (transactions.empty())
+    {
+        fmt::print("no new transactions\n");
+        return;
+    }
 
     // get all transactions that overlap with fetch, not including manual entries
-    auto earliest_transaction = DateHelper::RFCToYearMonthDay(transactions.back().created_at);
-    auto db_transactions = FindTransactions(earliest_transaction, DateHelper::GetToday(), false, false);
+    auto earliest_transaction_date = DateHelper::RFCToYearMonthDay(transactions.front().created_at);
+    auto db_transactions = FindTransactions(earliest_transaction_date, DateHelper::GetToday(), false, false);
 
     if (db_transactions.empty())
         return;
-
-    // put transactions into ascending (oldest first)
-    std::reverse(transactions.begin(), transactions.end());
 
     // add all values to db and create set of dates
     std::unordered_set<std::string> up_ids;
@@ -184,8 +145,6 @@ void DataManager::UpdateTransactions(std::vector<Transaction> transactions)
         for (auto& t : new_transactions)
             fmt::print("{}\n", t.summary());
     }
-
-    update_info(transactions.back().created_at);
 }
 
 std::vector<Transaction> DataManager::FindTransactions(const date::year_month_day& since,

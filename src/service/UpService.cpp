@@ -8,7 +8,6 @@
 #include <cpr/curl_container.h>
 #include <cpr/parameters.h>
 #include <cstdio>
-#include <exception>
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
@@ -25,43 +24,37 @@ using namespace nlohmann;
 
 UpService::UpService()
 {
-    // TODO: Move to DataManager static
-    // build ignore set
-    std::ifstream ignore_csv;
-    ignore_csv.open("info/ignore.csv");
+    const static auto PATH = "info/info.json";
+    std::ifstream info_stream(PATH);
+    auto info = nlohmann::json::parse(info_stream);
 
-    std::string line;
-    while (!ignore_csv.eof())
+    // build ignore set
+    const static auto IGNORE = "ignore";
+    auto ignore_json = info[IGNORE];
+    for (auto& item : ignore_json)
     {
-        getline(ignore_csv, line);
-        try
-        {
-            ignore.insert(line);
-        }
-        catch (exception e)
-        {
-            // eof
-        }
+        ignore_descriptions_.insert(item);
     }
 
     // build tag map
-    std::ifstream stream("info/tag.json");
-    auto tag_json = nlohmann::json::parse(stream);
+    const static auto TAGS = "tags";
+    auto tag_json = info[TAGS];
     for (auto t : tag_json.items())
     {
         for (auto entry : t.value())
         {
-            tag[entry["desc"]] = make_pair(tag_from_string(t.key()), entry["amount"]);
+            tags_[entry["desc"]] = make_pair(tag_from_string(t.key()), entry["amount"]);
         }
     }
+
+    account_ = GetTransactionalAccount();
 }
 
-vector<Transaction> UpService::FindNewTransactions()
+vector<Transaction> UpService::FindNewTransactions(date::year_month_day last_transaction_date)
 {
-    auto account = GetTransactionalAccount();
-    auto last_date = DateHelper::GetBackdate();
-    string last_date_rfc = DateHelper::ConvertToRFC(last_date);
-    return GetTransactions(account.id, last_date_rfc);
+    auto last_date = DateHelper::GetBackdate(last_transaction_date);
+    auto last_date_rfc = DateHelper::ConvertToRFC(last_date);
+    return GetTransactions(account_.id, last_date_rfc);
 }
 
 vector<Transaction> UpService::GetTransactions(const string& accountId, const string& since_)
@@ -74,12 +67,14 @@ vector<Transaction> UpService::GetTransactions(const string& accountId, const st
 
     vector<Transaction> transactions = MapTransactions(transactionsData);
 
+    // put transactions into ascending (oldest first)
+    std::reverse(transactions.begin(), transactions.end());
+
     return transactions;
 }
 
 vector<Account> UpService::GetAccounts()
 {
-    // TODO Cache
     json data = this->Get("accounts", {});
 
     vector<Account> accounts;
@@ -97,10 +92,6 @@ vector<Account> UpService::GetAccounts()
     return accounts;
 }
 
-/**
- * Get Transactional Account
- * @return
- */
 Account UpService::GetTransactionalAccount()
 {
     auto accounts = GetAccounts();
@@ -108,13 +99,6 @@ Account UpService::GetTransactionalAccount()
     return *account;
 }
 
-// private ------------------------------
-/**
- * Get request that supports paged responses
- * @param path
- * @param params
- * @return
- */
 json UpService::GetPaged(const std::string& path, const cpr::Parameters& params)
 {
     Response r = cpr::Get(Url{ UP_API + path }, BEARER, params);
@@ -188,31 +172,21 @@ bool IsInternalTransfer(const json& data)
 
 bool UpService::SkipTransaction(const json& data)
 {
-    return ignore.find(data["attributes"]["description"]) != ignore.end() || IsInternalTransfer(data);
+    return ignore_descriptions_.find(data["attributes"]["description"]) != ignore_descriptions_.end() || IsInternalTransfer(data);
 }
 
 Tag UpService::MapTag(std::string desc, std::string amount)
 {
-    std::pair<Tag, std::string> pair;
-    try
-    {
-        pair = tag.at(desc);
-    }
-    catch (exception e)
-    {
-        // no matching tag for desc, check if we can apply big tag
-        // negative values, so less than
-        if (stoi(amount) < Config::big_amount)
-        {
-            return BIG;
-        }
-    }
+    auto map_pair = tags_.find(desc);
+    if (map_pair == tags_.end())
+        return NONE;
 
+    auto tag_pair = map_pair->second;
     // either we have an exact match for the amount expected,
     // or the tag is applied to all transactions from merchant
     // regardless of amount
-    if (pair.second == amount || pair.second == "0")
-        return pair.first;
+    if (tag_pair.second == amount || tag_pair.second == "0")
+        return tag_pair.first;
 
     return NONE;
 }

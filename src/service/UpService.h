@@ -17,7 +17,7 @@ class UpService
 public:
     UpService();
 
-    std::vector<Transaction> FindNewTransactions();
+    std::vector<Transaction> FindNewTransactions(date::year_month_day last_transaction_date);
     std::vector<Transaction> GetTransactions(const std::string& accountId, const std::string& since);
     Account GetTransactionalAccount();
     std::vector<Account> GetAccounts();
@@ -39,8 +39,9 @@ private:
     std::vector<Transaction> MapTransactions(const nlohmann::json& transactionsData);
 
     // Member vars
-    std::set<std::string> ignore;                              // descriptions to ignore
-    std::map<std::string, std::pair<Tag, std::string>> tag;    // description to tag/price
+    std::set<std::string> ignore_descriptions_;                              // descriptions to ignore
+    std::map<std::string, std::pair<Tag, std::string>> tags_;    // description to tag/price
+    Account account_;
 
     // CONSTANTS
     cpr::Parameter PAGE_SIZE = cpr::Parameter{ "page[size]", "100" };
